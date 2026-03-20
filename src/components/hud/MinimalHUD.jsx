@@ -19,6 +19,7 @@ export const MinimalHUD = () => {
 
   const [inputValue, setInputValue] = useState("");
   const [time, setTime] = useState(new Date());
+  const [submitNotice, setSubmitNotice] = useState(null);
 
   // Update clock
   useEffect(() => {
@@ -29,13 +30,26 @@ export const MinimalHUD = () => {
   const handleSubmit = useCallback(
     (e) => {
       e.preventDefault();
-      if (inputValue.trim()) {
-        handleVoiceCommand(inputValue);
+      const trimmed = inputValue.trim();
+
+      if (trimmed) {
+        handleVoiceCommand(trimmed);
         setInputValue("");
+        setSubmitNotice("Sent");
       }
     },
     [inputValue, handleVoiceCommand],
   );
+
+  useEffect(() => {
+    if (!submitNotice) return;
+
+    const timeout = setTimeout(() => {
+      setSubmitNotice(null);
+    }, 1200);
+
+    return () => clearTimeout(timeout);
+  }, [submitNotice]);
 
   const handleMicToggle = () => {
     playButtonClick();
@@ -52,7 +66,7 @@ export const MinimalHUD = () => {
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
   return (
-    <div className="relative w-full h-full flex flex-col">
+    <div className="relative w-full h-full flex flex-col pb-[max(env(safe-area-inset-bottom),0.25rem)]">
       {/* Top Bar - Minimal, responsive */}
       <header
         className={`flex items-center justify-between transition-all ${isMobile ? "px-4 py-3" : "px-6 py-4 md:px-8 md:py-6"}`}
@@ -137,6 +151,24 @@ export const MinimalHUD = () => {
         className={`${isMobile ? "px-3 py-4" : "px-6 py-6 md:px-8 md:py-8"}`}
       >
         <div className="max-w-2xl mx-auto">
+          {/* Sent notice */}
+          <AnimatePresence>
+            {submitNotice && (
+              <motion.div
+                initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                transition={{ duration: 0.18 }}
+                className="mb-3 flex justify-center"
+              >
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-1 text-[11px] tracking-[0.14em] uppercase text-cyan-200/90">
+                  <span className="w-1 h-1 rounded-full bg-cyan-300" />
+                  {submitNotice}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Interim transcript display */}
           <AnimatePresence>
             {interimTranscript && (
@@ -160,7 +192,7 @@ export const MinimalHUD = () => {
             <div
               className={`
               relative flex items-center gap-2 md:gap-3
-              bg-white/5 backdrop-blur-sm rounded-full
+              bg-white/5 backdrop-blur-sm rounded-2xl md:rounded-full
               border transition-all duration-300
               ${isMobile ? "py-2" : "py-3"}
               ${isListening ? "border-cyan-400/50 shadow-[0_0_20px_rgba(34,211,238,0.15)]" : "border-white/10 hover:border-white/20"}
@@ -172,7 +204,7 @@ export const MinimalHUD = () => {
                 onClick={handleMicToggle}
                 disabled={!isSupported}
                 className={`
-                  flex-shrink-0 ${isMobile ? "w-9 h-9" : "w-10 h-10"} rounded-full flex items-center justify-center
+                  flex-shrink-0 ${isMobile ? "w-11 h-11" : "w-10 h-10"} rounded-full flex items-center justify-center
                   transition-all duration-300 ${isMobile ? "ml-1.5" : "ml-1"}
                   ${
                     isListening
@@ -205,9 +237,9 @@ export const MinimalHUD = () => {
                 placeholder={isListening ? "Listening..." : "Type a command..."}
                 disabled={systemState !== "active"}
                 className={`
-                  flex-1 bg-transparent px-3 ${isMobile ? "py-2.5" : "py-3"} pr-2
+                  flex-1 bg-transparent px-2 md:px-3 ${isMobile ? "py-2.5" : "py-3"} pr-1 md:pr-2
                   text-white/80 placeholder:text-white/30
-                  ${isMobile ? "text-xs" : "text-sm"} focus:outline-none
+                  ${isMobile ? "text-[13px]" : "text-sm"} focus:outline-none
                 `}
               />
 
@@ -216,7 +248,7 @@ export const MinimalHUD = () => {
                 type="submit"
                 disabled={!inputValue.trim()}
                 className={`
-                  flex-shrink-0 ${isMobile ? "w-9 h-9" : "w-10 h-10"} rounded-full
+                  flex-shrink-0 ${isMobile ? "w-11 h-11" : "w-10 h-10"} rounded-full
                   flex items-center justify-center
                   text-white/50 hover:text-cyan-400
                   disabled:opacity-30 disabled:cursor-not-allowed

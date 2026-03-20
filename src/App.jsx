@@ -67,14 +67,14 @@ function App() {
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
   return (
-    <div className="relative w-full h-screen bg-[#0a0a0f] overflow-hidden">
+    <div className="relative w-full h-[100dvh] bg-[#0a0a0f] overflow-hidden">
       {/* Subtle gradient background */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#0d1117] via-[#0a0a0f] to-[#050508]" />
 
       {/* Ambient glow behind hologram - reduced on mobile */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div
-          className={`rounded-full blur-[120px] bg-cyan-500/5 transition-all ${isMobile ? "w-[300px] h-[300px]" : "w-[600px] h-[600px]"}`}
+          className={`rounded-full transition-all ${isMobile ? "blur-[72px] w-[240px] h-[240px] bg-cyan-500/4" : "blur-[120px] w-[600px] h-[600px] bg-cyan-500/5"}`}
         />
       </div>
 
