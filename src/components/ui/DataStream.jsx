@@ -1,26 +1,33 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React from "react";
+import { motion } from "framer-motion";
 
-export const DataStream = ({ data = [], className = '' }) => {
-  const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  
+export const DataStream = ({ data = [], className = "" }) => {
+  const prefersReducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
   // Generate random data if none provided
-  const displayData = data.length > 0
-    ? data
-    : Array.from({ length: 20 }, () => ({
-        label: `DATA_${Math.floor(Math.random() * 999).toString().padStart(3, '0')}`,
-        value: Math.floor(Math.random() * 9999).toString().padStart(4, '0'),
-      }));
+  const displayData =
+    data.length > 0
+      ? data
+      : Array.from({ length: 20 }, () => ({
+          label: `DATA_${Math.floor(Math.random() * 999)
+            .toString()
+            .padStart(3, "0")}`,
+          value: Math.floor(Math.random() * 9999)
+            .toString()
+            .padStart(4, "0"),
+        }));
 
   return (
     <div className={`overflow-hidden h-full ${className}`}>
       <motion.div
         className="flex flex-col gap-1"
-        animate={{ y: prefersReducedMotion ? '0%' : ['0%', '-50%'] }}
+        animate={{ y: prefersReducedMotion ? "0%" : ["0%", "-50%"] }}
         transition={{
           duration: prefersReducedMotion ? 0 : 20,
           repeat: prefersReducedMotion ? 0 : Infinity,
-          ease: 'linear',
+          ease: "linear",
         }}
       >
         {/* Duplicate data for seamless loop */}

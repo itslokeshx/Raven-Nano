@@ -1,17 +1,21 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React from "react";
+import { motion } from "framer-motion";
 
 export const GlassPanel = ({
   children,
-  className = '',
+  className = "",
   withCorners = true,
   withGlow = false,
   animated = true,
   ...props
 }) => {
+  const prefersReducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
   const baseClasses = `
     glass-panel
-    ${withGlow ? 'glow-box' : ''}
+    ${withGlow ? "glow-box" : ""}
     ${className}
   `;
 
@@ -19,23 +23,31 @@ export const GlassPanel = ({
     <div className={baseClasses} {...props}>
       {withCorners && (
         <>
-          <div className="corner-bracket corner-tl animate-corner-pulse" />
-          <div className="corner-bracket corner-tr animate-corner-pulse" />
-          <div className="corner-bracket corner-bl animate-corner-pulse" />
-          <div className="corner-bracket corner-br animate-corner-pulse" />
+          <div
+            className={`corner-bracket corner-tl ${prefersReducedMotion ? "" : "animate-corner-pulse"}`}
+          />
+          <div
+            className={`corner-bracket corner-tr ${prefersReducedMotion ? "" : "animate-corner-pulse"}`}
+          />
+          <div
+            className={`corner-bracket corner-bl ${prefersReducedMotion ? "" : "animate-corner-pulse"}`}
+          />
+          <div
+            className={`corner-bracket corner-br ${prefersReducedMotion ? "" : "animate-corner-pulse"}`}
+          />
         </>
       )}
       {children}
     </div>
   );
 
-  if (!animated) return content;
+  if (!animated || prefersReducedMotion) return content;
 
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5, ease: 'easeOut' }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
       className={className}
     >
       {content}
