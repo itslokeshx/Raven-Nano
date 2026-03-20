@@ -1,17 +1,17 @@
-import React, { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { useSoundEngine } from '../hooks/useSoundEngine';
+import React, { useState, useCallback } from "react";
+import { motion } from "framer-motion";
+import { useSoundEngine } from "../hooks/useSoundEngine";
 
 export const OnboardingModal = ({ onStart }) => {
   const [isHovered, setIsHovered] = useState(false);
   const { initialize } = useSoundEngine();
 
-  const handleClick = useCallback(() => {
+  const handleClick = useCallback(async () => {
     // Initialize audio context on user gesture (fixes Chrome autoplay policy)
-    initialize();
+    await initialize();
 
     // Warm up speech synthesis by loading voices
-    if ('speechSynthesis' in window) {
+    if ("speechSynthesis" in window) {
       window.speechSynthesis.getVoices();
     }
 
@@ -34,8 +34,7 @@ export const OnboardingModal = ({ onStart }) => {
           className="mb-8"
         >
           <div className="relative inline-block">
-            <div className="w-24 h-24 border border-cyan-500/30 rounded-full flex items-center justify-center"
-            >
+            <div className="w-24 h-24 border border-cyan-500/30 rounded-full flex items-center justify-center">
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
@@ -75,10 +74,12 @@ export const OnboardingModal = ({ onStart }) => {
           onMouseLeave={() => setIsHovered(false)}
           className="group relative px-8 py-3"
         >
-          <span className={`
+          <span
+            className={`
             absolute inset-0 border rounded-full transition-all duration-300
-            ${isHovered ? 'border-cyan-400/60 bg-cyan-400/10' : 'border-white/20'}
-          `} />
+            ${isHovered ? "border-cyan-400/60 bg-cyan-400/10" : "border-white/20"}
+          `}
+          />
           <span className="relative text-white/70 group-hover:text-cyan-300 transition-colors text-sm tracking-wider">
             Tap to Initialize
           </span>

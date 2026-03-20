@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useJarvisStore } from '../../store/jarvisStore';
-import { useSoundEngine } from '../../hooks/useSoundEngine';
+import React, { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useJarvisStore } from "../../store/jarvisStore";
+import { useSoundEngine } from "../../hooks/useSoundEngine";
 
 export const BootSequence = ({ onComplete }) => {
   const [stage, setStage] = useState(0);
@@ -12,12 +12,9 @@ export const BootSequence = ({ onComplete }) => {
   const setSystemState = useJarvisStore((state) => state.setSystemState);
   const speak = useJarvisStore((state) => state.speak);
 
-  const { playBootSound, initialize } = useSoundEngine();
+  const { playBootSound } = useSoundEngine();
 
   useEffect(() => {
-    // Initialize audio context
-    initialize();
-
     // Boot sequence timing
     // 0-0.5s: Pure black screen
     // 0.5-1.5s: Stark Industries logo fades in
@@ -34,7 +31,7 @@ export const BootSequence = ({ onComplete }) => {
       setTimeout(() => {
         setShowLogo(true);
         playBootSound();
-      }, 500)
+      }, 500),
     );
 
     // 1.5s - Glitch effect
@@ -42,14 +39,14 @@ export const BootSequence = ({ onComplete }) => {
       setTimeout(() => {
         setGlitching(true);
         setTimeout(() => setGlitching(false), 300);
-      }, 1500)
+      }, 1500),
     );
 
     // 2s - Start progress
     timeouts.push(
       setTimeout(() => {
         setStage(1);
-      }, 2000)
+      }, 2000),
     );
 
     // Progress bar animation
@@ -67,31 +64,37 @@ export const BootSequence = ({ onComplete }) => {
     timeouts.push(
       setTimeout(() => {
         setStage(2);
-        speak("JARVIS online. All systems initializing.", { category: 'boot', priority: 'high' });
-      }, 5000)
+        speak("JARVIS online. All systems initializing.", {
+          category: "boot",
+          priority: "high",
+        });
+      }, 5000),
     );
 
     // 6s - More dialogue
     timeouts.push(
       setTimeout(() => {
-        speak("Good morning. I've been running diagnostics. You'll be pleased to know everything is functioning at peak efficiency.", { category: 'boot', priority: 'high' });
-      }, 6500)
+        speak(
+          "Good morning. I've been running diagnostics. You'll be pleased to know everything is functioning at peak efficiency.",
+          { category: "boot", priority: "high" },
+        );
+      }, 6500),
     );
 
     // 7s - Boot complete
     timeouts.push(
       setTimeout(() => {
         setStage(3);
-        setSystemState('active');
+        setSystemState("active");
         if (onComplete) onComplete();
-      }, 8000)
+      }, 8000),
     );
 
     return () => {
       timeouts.forEach(clearTimeout);
       clearInterval(progressInterval);
     };
-  }, [setSystemState, speak, onComplete, playBootSound, initialize]);
+  }, [setSystemState, speak, onComplete, playBootSound]);
 
   return (
     <AnimatePresence>
@@ -108,12 +111,14 @@ export const BootSequence = ({ onComplete }) => {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 1.1 }}
                 transition={{ duration: 0.5 }}
-                className={`flex flex-col items-center gap-8 ${glitching ? 'animate-glitch' : ''}`}
+                className={`flex flex-col items-center gap-8 ${glitching ? "animate-glitch" : ""}`}
               >
                 {/* Stark Industries Logo */}
                 <div className="flex items-center gap-4">
                   <div className="w-20 h-20 border-4 border-jarvis-primary rounded-lg flex items-center justify-center shadow-[0_0_40px_rgba(0,212,255,0.5)]">
-                    <span className="text-jarvis-primary font-orbitron font-bold text-5xl">◈</span>
+                    <span className="text-jarvis-primary font-orbitron font-bold text-5xl">
+                      ◈
+                    </span>
                   </div>
                   <div className="flex flex-col">
                     <span className="text-jarvis-primary font-orbitron font-bold text-4xl tracking-wider glow-text">
@@ -149,16 +154,24 @@ export const BootSequence = ({ onComplete }) => {
                     {/* Status Messages */}
                     <div className="h-6">
                       {progress > 20 && progress < 40 && (
-                        <span className="text-jarvis-primary/60 font-mono text-xs">Loading core modules...</span>
+                        <span className="text-jarvis-primary/60 font-mono text-xs">
+                          Loading core modules...
+                        </span>
                       )}
                       {progress >= 40 && progress < 60 && (
-                        <span className="text-jarvis-primary/60 font-mono text-xs">Initializing holographic interface...</span>
+                        <span className="text-jarvis-primary/60 font-mono text-xs">
+                          Initializing holographic interface...
+                        </span>
                       )}
                       {progress >= 60 && progress < 80 && (
-                        <span className="text-jarvis-primary/60 font-mono text-xs">Calibrating sensors...</span>
+                        <span className="text-jarvis-primary/60 font-mono text-xs">
+                          Calibrating sensors...
+                        </span>
                       )}
                       {progress >= 80 && (
-                        <span className="text-jarvis-primary/60 font-mono text-xs">System ready...</span>
+                        <span className="text-jarvis-primary/60 font-mono text-xs">
+                          System ready...
+                        </span>
                       )}
                     </div>
                   </motion.div>

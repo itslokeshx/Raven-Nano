@@ -1,21 +1,23 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useJarvisStore } from '../../store/jarvisStore';
-import { useVoiceRecognition } from '../../hooks/useVoiceRecognition';
-import { useSoundEngine } from '../../hooks/useSoundEngine';
+import React, { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useJarvisStore } from "../../store/jarvisStore";
+import { useVoiceRecognition } from "../../hooks/useVoiceRecognition";
+import { useSoundEngine } from "../../hooks/useSoundEngine";
 
 export const MinimalHUD = () => {
   const systemState = useJarvisStore((state) => state.systemState);
   const isJarvisSpeaking = useJarvisStore((state) => state.isJarvisSpeaking);
   const isListening = useJarvisStore((state) => state.isListening);
   const setIsListening = useJarvisStore((state) => state.setIsListening);
-  const handleVoiceCommand = useJarvisStore((state) => state.handleVoiceCommand);
+  const handleVoiceCommand = useJarvisStore(
+    (state) => state.handleVoiceCommand,
+  );
   const triggerAlert = useJarvisStore((state) => state.triggerAlert);
 
   const { playButtonClick, playAlert } = useSoundEngine();
   const { isSupported, interimTranscript } = useVoiceRecognition();
 
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const [time, setTime] = useState(new Date());
 
   // Update clock
@@ -24,17 +26,20 @@ export const MinimalHUD = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const handleSubmit = useCallback((e) => {
-    e.preventDefault();
-    if (inputValue.trim()) {
-      handleVoiceCommand(inputValue);
-      setInputValue('');
-    }
-  }, [inputValue, handleVoiceCommand]);
+  const handleSubmit = useCallback(
+    (e) => {
+      e.preventDefault();
+      if (inputValue.trim()) {
+        handleVoiceCommand(inputValue);
+        setInputValue("");
+      }
+    },
+    [inputValue, handleVoiceCommand],
+  );
 
   const handleMicToggle = () => {
     playButtonClick();
-    if (isSupported && systemState === 'active') {
+    if (isSupported && systemState === "active") {
       setIsListening(!isListening);
     }
   };
@@ -44,17 +49,23 @@ export const MinimalHUD = () => {
     triggerAlert();
   };
 
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+
   return (
     <div className="relative w-full h-full flex flex-col">
-      {/* Top Bar - Minimal */}
-      <header className="flex items-center justify-between px-6 py-4 md:px-8 md:py-6">
-        <div className="flex items-center gap-3">
+      {/* Top Bar - Minimal, responsive */}
+      <header
+        className={`flex items-center justify-between transition-all ${isMobile ? "px-4 py-3" : "px-6 py-4 md:px-8 md:py-6"}`}
+      >
+        <div className="flex items-center gap-2 md:gap-3">
           <div className="relative">
-            <div className={`
-              w-2 h-2 rounded-full transition-all duration-500
-              ${systemState === 'active' ? 'bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)]' : 'bg-white/30'}
-            `} />
-            {systemState === 'active' && (
+            <div
+              className={`
+              w-1.5 h-1.5 md:w-2 md:h-2 rounded-full transition-all duration-500
+              ${systemState === "active" ? "bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)]" : "bg-white/30"}
+            `}
+            />
+            {systemState === "active" && (
               <motion.div
                 animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
                 transition={{ duration: 2, repeat: Infinity }}
@@ -62,13 +73,25 @@ export const MinimalHUD = () => {
               />
             )}
           </div>
-          <span className="text-white/50 text-xs tracking-[0.2em] uppercase">
-            {systemState === 'active' ? 'Online' : 'Standby'}
+          <span className="text-white/50 text-[10px] md:text-xs tracking-[0.15em] md:tracking-[0.2em] uppercase font-light">
+            {isMobile
+              ? systemState === "active"
+                ? "ON"
+                : "OFF"
+              : systemState === "active"
+                ? "Online"
+                : "Standby"}
           </span>
         </div>
 
-        <div className="text-white/30 font-light text-sm tabular-nums">
-          {time.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}
+        <div
+          className={`text-white/30 font-light tabular-nums ${isMobile ? "text-[11px]" : "text-sm"}`}
+        >
+          {time.toLocaleTimeString("en-US", {
+            hour12: false,
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
         </div>
       </header>
 
@@ -88,7 +111,9 @@ export const MinimalHUD = () => {
                   <motion.div
                     key={i}
                     animate={{
-                      height: isListening ? [4, 24, 4] : [4, 16 + Math.random() * 16, 4],
+                      height: isListening
+                        ? [4, 24, 4]
+                        : [4, 16 + Math.random() * 16, 4],
                     }}
                     transition={{
                       duration: 0.5,
@@ -100,7 +125,7 @@ export const MinimalHUD = () => {
                 ))}
               </div>
               <p className="text-cyan-400/60 text-xs tracking-wider uppercase">
-                {isListening ? 'Listening...' : 'Speaking'}
+                {isListening ? "Listening..." : "Speaking"}
               </p>
             </motion.div>
           )}
@@ -108,7 +133,9 @@ export const MinimalHUD = () => {
       </div>
 
       {/* Bottom - Input Area */}
-      <footer className="px-6 py-6 md:px-8 md:py-8">
+      <footer
+        className={`${isMobile ? "px-3 py-4" : "px-6 py-6 md:px-8 md:py-8"}`}
+      >
         <div className="max-w-2xl mx-auto">
           {/* Interim transcript display */}
           <AnimatePresence>
@@ -117,37 +144,54 @@ export const MinimalHUD = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="text-center mb-4"
+                className={`text-center ${isMobile ? "mb-3" : "mb-4"}`}
               >
-                <p className="text-white/40 text-sm">{interimTranscript}</p>
+                <p
+                  className={`text-white/40 ${isMobile ? "text-xs" : "text-sm"}`}
+                >
+                  {interimTranscript}
+                </p>
               </motion.div>
             )}
           </AnimatePresence>
 
           {/* Input Bar */}
           <form onSubmit={handleSubmit} className="relative">
-            <div className={`
-              relative flex items-center gap-3
+            <div
+              className={`
+              relative flex items-center gap-2 md:gap-3
               bg-white/5 backdrop-blur-sm rounded-full
               border transition-all duration-300
-              ${isListening ? 'border-cyan-400/50 shadow-[0_0_20px_rgba(34,211,238,0.15)]' : 'border-white/10 hover:border-white/20'}
-            `}>
+              ${isMobile ? "py-2" : "py-3"}
+              ${isListening ? "border-cyan-400/50 shadow-[0_0_20px_rgba(34,211,238,0.15)]" : "border-white/10 hover:border-white/20"}
+            `}
+            >
               {/* Mic Button */}
               <button
                 type="button"
                 onClick={handleMicToggle}
                 disabled={!isSupported}
                 className={`
-                  flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center
-                  transition-all duration-300 ml-1
-                  ${isListening
-                    ? 'bg-cyan-400/20 text-cyan-400'
-                    : 'hover:bg-white/10 text-white/50 hover:text-white/70'}
-                  ${!isSupported && 'opacity-40 cursor-not-allowed'}
+                  flex-shrink-0 ${isMobile ? "w-9 h-9" : "w-10 h-10"} rounded-full flex items-center justify-center
+                  transition-all duration-300 ${isMobile ? "ml-1.5" : "ml-1"}
+                  ${
+                    isListening
+                      ? "bg-cyan-400/20 text-cyan-400"
+                      : "hover:bg-white/10 text-white/50 hover:text-white/70"
+                  }
+                  ${!isSupported && "opacity-40 cursor-not-allowed"}
                 `}
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                <svg
+                  className={isMobile ? "w-3.5 h-3.5" : "w-4 h-4"}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
                     d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
                   />
                 </svg>
@@ -158,29 +202,39 @@ export const MinimalHUD = () => {
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder={isListening ? 'Listening...' : 'Type a command...'}
-                disabled={systemState !== 'active'}
-                className="
-                  flex-1 bg-transparent py-3 pr-4
+                placeholder={isListening ? "Listening..." : "Type a command..."}
+                disabled={systemState !== "active"}
+                className={`
+                  flex-1 bg-transparent px-3 ${isMobile ? "py-2.5" : "py-3"} pr-2
                   text-white/80 placeholder:text-white/30
-                  text-sm focus:outline-none
-                "
+                  ${isMobile ? "text-xs" : "text-sm"} focus:outline-none
+                `}
               />
 
               {/* Send Button */}
               <button
                 type="submit"
                 disabled={!inputValue.trim()}
-                className="
-                  flex-shrink-0 w-10 h-10 rounded-full
+                className={`
+                  flex-shrink-0 ${isMobile ? "w-9 h-9" : "w-10 h-10"} rounded-full
                   flex items-center justify-center
                   text-white/50 hover:text-cyan-400
                   disabled:opacity-30 disabled:cursor-not-allowed
-                  transition-all duration-200 mr-1
-                "
+                  transition-all duration-200 ${isMobile ? "mr-1.5" : "mr-1"}
+                `}
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 19V5m0 0l-7 7m7-7l7 7" />
+                <svg
+                  className={isMobile ? "w-3.5 h-3.5" : "w-4 h-4"}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M12 19V5m0 0l-7 7m7-7l7 7"
+                  />
                 </svg>
               </button>
             </div>
@@ -208,7 +262,9 @@ export const MinimalHUD = () => {
 
 // Quick action button component
 const QuickAction = ({ label, command }) => {
-  const handleVoiceCommand = useJarvisStore((state) => state.handleVoiceCommand);
+  const handleVoiceCommand = useJarvisStore(
+    (state) => state.handleVoiceCommand,
+  );
   const { playButtonClick } = useSoundEngine();
 
   const handleClick = () => {

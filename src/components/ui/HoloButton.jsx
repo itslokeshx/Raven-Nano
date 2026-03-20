@@ -1,41 +1,45 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { useSoundEngine } from '../../hooks/useSoundEngine';
+import React from "react";
+import { motion } from "framer-motion";
+import { useSoundEngine } from "../../hooks/useSoundEngine";
 
 export const HoloButton = ({
   children,
   onClick,
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   disabled = false,
-  className = '',
+  className = "",
   ...props
 }) => {
   const { playButtonClick, playButtonHover, initialize } = useSoundEngine();
 
-  const handleClick = (e) => {
-    initialize();
+  const handleClick = async (e) => {
+    await initialize();
     playButtonClick();
     if (onClick) onClick(e);
   };
 
   const handleHover = () => {
-    initialize();
     playButtonHover();
   };
 
   const sizeClasses = {
-    sm: 'px-3 py-1 text-xs',
-    md: 'px-4 py-2 text-sm',
-    lg: 'px-6 py-3 text-base',
+    sm: "px-3 py-1 text-xs",
+    md: "px-4 py-2 text-sm",
+    lg: "px-6 py-3 text-base",
   };
 
   const variantClasses = {
-    primary: 'border-jarvis-primary/50 hover:border-jarvis-primary text-jarvis-primary',
-    secondary: 'border-jarvis-secondary/50 hover:border-jarvis-secondary text-jarvis-secondary',
-    accent: 'border-jarvis-accent/50 hover:border-jarvis-accent text-jarvis-accent',
-    warning: 'border-jarvis-warning/50 hover:border-jarvis-warning text-jarvis-warning',
-    critical: 'border-jarvis-critical/50 hover:border-jarvis-critical text-jarvis-critical',
+    primary:
+      "border-jarvis-primary/50 hover:border-jarvis-primary text-jarvis-primary",
+    secondary:
+      "border-jarvis-secondary/50 hover:border-jarvis-secondary text-jarvis-secondary",
+    accent:
+      "border-jarvis-accent/50 hover:border-jarvis-accent text-jarvis-accent",
+    warning:
+      "border-jarvis-warning/50 hover:border-jarvis-warning text-jarvis-warning",
+    critical:
+      "border-jarvis-critical/50 hover:border-jarvis-critical text-jarvis-critical",
   };
 
   const baseClasses = `

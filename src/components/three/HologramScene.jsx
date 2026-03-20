@@ -1,22 +1,30 @@
-import React, { Suspense } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { EffectComposer, Bloom, ChromaticAberration } from '@react-three/postprocessing';
-import { HologramCore } from './HologramCore';
-import { DataRings } from './DataRings';
-import { HexGrid } from './HexGrid';
-import { ParticleField } from './ParticleField';
+import React, { Suspense } from "react";
+import { Canvas } from "@react-three/fiber";
+import {
+  EffectComposer,
+  Bloom,
+  ChromaticAberration,
+} from "@react-three/postprocessing";
+import { HologramCore } from "./HologramCore";
+import { DataRings } from "./DataRings";
+import { HexGrid } from "./HexGrid";
+import { ParticleField } from "./ParticleField";
 
 const HologramScene = () => {
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
   return (
     <div className="absolute inset-0 z-0">
       <Canvas
         camera={{ position: [0, 0, 8], fov: 45 }}
         gl={{
-          antialias: true,
+          antialias: false,
           alpha: true,
-          powerPreference: 'high-performance',
+          powerPreference: "high-performance",
+          precision: "mediump",
+          stencil: false,
         }}
-        dpr={[1, 2]}
+        dpr={isMobile ? [1, 1.2] : [1, 1.5]}
+        performance={{ min: 0.5 }}
       >
         <Suspense fallback={null}>
           {/* Ambient lighting */}

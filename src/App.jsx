@@ -1,18 +1,20 @@
-import React, { useEffect, useCallback, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import HologramScene from './components/three/HologramScene';
-import { useJarvisStore } from './store/jarvisStore';
-import { useJarvisVoice } from './hooks/useJarvisVoice';
-import { useSoundEngine } from './hooks/useSoundEngine';
-import { MinimalHUD } from './components/hud/MinimalHUD';
-import { DialogueOverlay } from './components/dialogue/DialogueOverlay';
-import { OnboardingModal } from './components/OnboardingModal';
+import React, { useEffect, useCallback, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import HologramScene from "./components/three/HologramScene";
+import { useJarvisStore } from "./store/jarvisStore";
+import { useJarvisVoice } from "./hooks/useJarvisVoice";
+import { useSoundEngine } from "./hooks/useSoundEngine";
+import { MinimalHUD } from "./components/hud/MinimalHUD";
+import { DialogueOverlay } from "./components/dialogue/DialogueOverlay";
+import { OnboardingModal } from "./components/OnboardingModal";
 
 function App() {
   const systemState = useJarvisStore((state) => state.systemState);
   const setSystemState = useJarvisStore((state) => state.setSystemState);
   const lastInteraction = useJarvisStore((state) => state.lastInteraction);
-  const triggerIdleDialogue = useJarvisStore((state) => state.triggerIdleDialogue);
+  const triggerIdleDialogue = useJarvisStore(
+    (state) => state.triggerIdleDialogue,
+  );
   const soundEngine = useSoundEngine();
 
   const [showOnboarding, setShowOnboarding] = useState(true);
@@ -28,18 +30,18 @@ function App() {
       soundEngine.initialize();
     };
 
-    document.addEventListener('click', handleUserGesture, { once: true });
-    document.addEventListener('keydown', handleUserGesture, { once: true });
+    document.addEventListener("click", handleUserGesture, { once: true });
+    document.addEventListener("keydown", handleUserGesture, { once: true });
 
     return () => {
-      document.removeEventListener('click', handleUserGesture);
-      document.removeEventListener('keydown', handleUserGesture);
+      document.removeEventListener("click", handleUserGesture);
+      document.removeEventListener("keydown", handleUserGesture);
     };
   }, [isInitialized, soundEngine.initialize]);
 
   // Idle behavior
   useEffect(() => {
-    if (systemState !== 'active') return;
+    if (systemState !== "active") return;
 
     const interval = setInterval(() => {
       const timeSinceInteraction = Date.now() - lastInteraction;
@@ -54,22 +56,26 @@ function App() {
   const handleInitialize = useCallback(() => {
     setShowOnboarding(false);
     setIsInitialized(true);
-    setSystemState('booting');
+    setSystemState("booting");
 
     // Simulate boot completion after animation
     setTimeout(() => {
-      setSystemState('active');
+      setSystemState("active");
     }, 3000);
   }, [setSystemState]);
+
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
   return (
     <div className="relative w-full h-screen bg-[#0a0a0f] overflow-hidden">
       {/* Subtle gradient background */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#0d1117] via-[#0a0a0f] to-[#050508]" />
 
-      {/* Ambient glow behind hologram */}
+      {/* Ambient glow behind hologram - reduced on mobile */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-[600px] h-[600px] bg-cyan-500/5 rounded-full blur-[120px]" />
+        <div
+          className={`rounded-full blur-[120px] bg-cyan-500/5 transition-all ${isMobile ? "w-[300px] h-[300px]" : "w-[600px] h-[600px]"}`}
+        />
       </div>
 
       {/* 3D Hologram Scene */}

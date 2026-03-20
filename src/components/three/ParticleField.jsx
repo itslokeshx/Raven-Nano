@@ -1,7 +1,7 @@
-import React, { useRef, useMemo } from 'react';
-import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
-import { useJarvisStore } from '../../store/jarvisStore';
+import React, { useRef, useMemo } from "react";
+import { useFrame } from "@react-three/fiber";
+import * as THREE from "three";
+import { useJarvisStore } from "../../store/jarvisStore";
 
 export const ParticleField = () => {
   const pointsRef = useRef();
@@ -14,12 +14,14 @@ export const ParticleField = () => {
   const isActive = isJarvisSpeaking || isListening;
 
   const { positions, colors } = useMemo(() => {
-    const particleCount = 500;
+    // Reduce particle count on mobile
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+    const particleCount = isMobile ? 200 : 500;
     const positions = new Float32Array(particleCount * 3);
     const colors = new Float32Array(particleCount * 3);
     const velocities = [];
 
-    const color = new THREE.Color(0x00D4FF);
+    const color = new THREE.Color(0x00d4ff);
 
     for (let i = 0; i < particleCount; i++) {
       const theta = Math.random() * Math.PI * 2;
@@ -48,13 +50,15 @@ export const ParticleField = () => {
   }, []);
 
   const material = useMemo(() => {
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
     return new THREE.PointsMaterial({
-      color: 0x00D4FF,
-      size: 0.02,
+      color: 0x00d4ff,
+      size: isMobile ? 0.03 : 0.02,
       transparent: true,
       opacity: 0.4,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
+      sizeAttenuation: true,
     });
   }, []);
 
@@ -73,11 +77,14 @@ export const ParticleField = () => {
 
       // Update position with increased speed when active
       positions[i3] += velocity.x * speed;
-      positions[i3 + 1] += velocity.y * speed + (isActive ? Math.sin(time * 3 + i) * 0.01 : 0);
+      positions[i3 + 1] +=
+        velocity.y * speed + (isActive ? Math.sin(time * 3 + i) * 0.01 : 0);
       positions[i3 + 2] += velocity.z * speed;
 
       // Wrap around
-      const dist = Math.sqrt(positions[i3] ** 2 + positions[i3 + 1] ** 2 + positions[i3 + 2] ** 2);
+      const dist = Math.sqrt(
+        positions[i3] ** 2 + positions[i3 + 1] ** 2 + positions[i3 + 2] ** 2,
+      );
 
       if (dist > 12) {
         const theta = Math.random() * Math.PI * 2;
@@ -93,8 +100,16 @@ export const ParticleField = () => {
     pointsRef.current.geometry.attributes.position.needsUpdate = true;
 
     // Opacity changes
-    const targetOpacity = isActive ? 0.8 : systemState === 'sleeping' ? 0.1 : 0.4;
-    material.opacity = THREE.MathUtils.lerp(material.opacity, targetOpacity, 0.03);
+    const targetOpacity = isActive
+      ? 0.8
+      : systemState === "sleeping"
+        ? 0.1
+        : 0.4;
+    material.opacity = THREE.MathUtils.lerp(
+      material.opacity,
+      targetOpacity,
+      0.03,
+    );
   });
 
   return (

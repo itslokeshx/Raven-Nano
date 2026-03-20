@@ -2,6 +2,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 export const DataStream = ({ data = [], className = '' }) => {
+  const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  
   // Generate random data if none provided
   const displayData = data.length > 0
     ? data
@@ -14,10 +16,10 @@ export const DataStream = ({ data = [], className = '' }) => {
     <div className={`overflow-hidden h-full ${className}`}>
       <motion.div
         className="flex flex-col gap-1"
-        animate={{ y: ['0%', '-50%'] }}
+        animate={{ y: prefersReducedMotion ? '0%' : ['0%', '-50%'] }}
         transition={{
-          duration: 20,
-          repeat: Infinity,
+          duration: prefersReducedMotion ? 0 : 20,
+          repeat: prefersReducedMotion ? 0 : Infinity,
           ease: 'linear',
         }}
       >

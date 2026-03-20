@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useJarvisStore } from '../store/jarvisStore';
+import { useEffect, useRef, useState } from "react";
+import { useJarvisStore } from "../store/jarvisStore";
 
 export const useVoiceRecognition = () => {
   const isListening = useJarvisStore((state) => state.isListening);
@@ -8,15 +8,28 @@ export const useVoiceRecognition = () => {
 
   const recognitionRef = useRef(null);
   const [isSupported, setIsSupported] = useState(true);
-  const [interimTranscript, setInterimTranscript] = useState('');
+  const [interimTranscript, setInterimTranscript] = useState("");
   const restartTimeoutRef = useRef(null);
   const errorCountRef = useRef(0);
+  const isListeningRef = useRef(isListening);
+  const systemStateRef = useRef(systemState);
+  const lastFinalTranscriptRef = useRef("");
+  const lastFinalTranscriptAtRef = useRef(0);
 
   useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    isListeningRef.current = isListening;
+  }, [isListening]);
+
+  useEffect(() => {
+    systemStateRef.current = systemState;
+  }, [systemState]);
+
+  useEffect(() => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      console.warn('Speech recognition not supported');
+      console.warn("Speech recognition not supported");
       setIsSupported(false);
       return;
     }
@@ -26,7 +39,7 @@ export const useVoiceRecognition = () => {
 
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = 'en-US';
+    recognition.lang = "en-US";
     recognition.maxAlternatives = 1;
 
     recognition.onstart = () => {
@@ -36,23 +49,23 @@ export const useVoiceRecognition = () => {
 
     recognition.onend = () => {
       setIsListening(false);
-      setInterimTranscript('');
+      setInterimTranscript("");
 
       // Auto-restart if we're supposed to be listening and system is active
-      if (isListening && systemState === 'active') {
+      if (isListeningRef.current && systemStateRef.current === "active") {
         restartTimeoutRef.current = setTimeout(() => {
           try {
             recognition.start();
           } catch (e) {
-            console.warn('Recognition restart failed:', e);
+            console.warn("Recognition restart failed:", e);
           }
         }, 100);
       }
     };
 
     recognition.onresult = (event) => {
-      let finalTranscript = '';
-      let interim = '';
+      let finalTranscript = "";
+      let interim = "";
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
@@ -66,58 +79,79 @@ export const useVoiceRecognition = () => {
       setInterimTranscript(interim);
 
       if (finalTranscript) {
-        // Process the final transcript
-        const store = useJarvisStore.getState();
-        store.handleVoiceCommand(finalTranscript);
-        setInterimTranscript('');
+        const normalizedFinalTranscript = finalTranscript
+          .replace(/\s+/g, " ")
+          .trim();
+        const now = Date.now();
+
+        if (
+          normalizedFinalTranscript &&
+          (normalizedFinalTranscript !== lastFinalTranscriptRef.current ||
+            now - lastFinalTranscriptAtRef.current > 2000)
+        ) {
+          lastFinalTranscriptRef.current = normalizedFinalTranscript;
+          lastFinalTranscriptAtRef.current = now;
+
+          const store = useJarvisStore.getState();
+          store.handleVoiceCommand(normalizedFinalTranscript);
+        }
+
+        setInterimTranscript("");
       }
     };
 
     recognition.onerror = (event) => {
-      console.warn('Speech recognition error:', event.error);
+      console.warn("Speech recognition error:", event.error);
 
-      if (event.error === 'not-allowed') {
+      if (event.error === "not-allowed") {
         setIsSupported(false);
         setIsListening(false);
-        console.warn('Microphone permission denied');
-      } else if (event.error === 'network') {
+        console.warn("Microphone permission denied");
+      } else if (event.error === "network") {
         // Network error - retry with exponential backoff
         errorCountRef.current += 1;
-        if (errorCountRef.current < 3 && isListening && systemState === 'active') {
-          const retryDelay = Math.min(1000 * Math.pow(2, errorCountRef.current), 5000);
+        if (
+          errorCountRef.current < 3 &&
+          isListeningRef.current &&
+          systemStateRef.current === "active"
+        ) {
+          const retryDelay = Math.min(
+            1000 * Math.pow(2, errorCountRef.current),
+            5000,
+          );
           console.log(`Retrying in ${retryDelay}ms...`);
           restartTimeoutRef.current = setTimeout(() => {
             try {
               recognition.start();
             } catch (e) {
-              console.warn('Network retry failed:', e);
+              console.warn("Network retry failed:", e);
             }
           }, retryDelay);
         }
-      } else if (event.error === 'no-speech') {
+      } else if (event.error === "no-speech") {
         // No speech detected - this is normal, just restart
-        if (isListening && systemState === 'active') {
+        if (isListeningRef.current && systemStateRef.current === "active") {
           try {
             recognition.start();
           } catch (e) {
-            console.warn('no-speech restart failed:', e);
+            console.warn("no-speech restart failed:", e);
           }
         }
-      } else if (event.error === 'audio-capture') {
+      } else if (event.error === "audio-capture") {
         // Audio capture issue - check microphone
-        console.warn('Audio capture issue - check microphone connection');
-        if (isListening && systemState === 'active') {
+        console.warn("Audio capture issue - check microphone connection");
+        if (isListeningRef.current && systemStateRef.current === "active") {
           restartTimeoutRef.current = setTimeout(() => {
             try {
               recognition.start();
             } catch (e) {
-              console.warn('Audio capture retry failed:', e);
+              console.warn("Audio capture retry failed:", e);
             }
           }, 500);
         }
-      } else if (event.error === 'aborted') {
+      } else if (event.error === "aborted") {
         // Aborted - normal behavior, don't restart
-        console.log('Recognition aborted');
+        console.log("Recognition aborted");
       }
     };
 
@@ -139,17 +173,17 @@ export const useVoiceRecognition = () => {
 
     const recognition = recognitionRef.current;
 
-    if (isListening && systemState === 'active') {
+    if (isListening && systemState === "active") {
       try {
         recognition.start();
       } catch (e) {
-        console.warn('Recognition already started');
+        console.warn("Recognition already started");
       }
     } else {
       try {
         recognition.stop();
       } catch (e) {
-        console.warn('Recognition already stopped');
+        console.warn("Recognition already stopped");
       }
     }
   }, [isListening, systemState, isSupported]);
