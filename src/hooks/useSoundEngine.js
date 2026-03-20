@@ -5,12 +5,21 @@ export const useSoundEngine = () => {
   const synthsRef = useRef({});
   const effectsRef = useRef({});
   const isInitializedRef = useRef(false);
+  const initAttemptedRef = useRef(false);
 
-  // Initialize audio context
+  // Initialize audio context on user gesture
   const initialize = useCallback(async () => {
-    if (isInitializedRef.current) return;
+    if (isInitializedRef.current || initAttemptedRef.current) return;
 
-    await Tone.start();
+    initAttemptedRef.current = true;
+
+    try {
+      await Tone.start();
+      console.log('Audio context initialized');
+    } catch (e) {
+      console.warn('Audio context waiting for user gesture:', e);
+      return;
+    }
 
     // Create synths
     synthsRef.current = {

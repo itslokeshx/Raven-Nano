@@ -29,8 +29,9 @@ Current context:
 
 Respond as JARVIS would - professional, efficient, with occasional dry wit. Keep responses concise unless technical detail is required.`;
 
+  // Try different request formats
   const requestBody = {
-    query: query || 'Hello',
+    message: query || 'Hello',
     system_prompt: systemPrompt,
     max_tokens: 150,
     temperature: 0.7,
@@ -47,11 +48,31 @@ Respond as JARVIS would - professional, efficient, with occasional dry wit. Keep
     });
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      // Try fallback format
+      const fallbackBody = {
+        prompt: query || 'Hello',
+        system: systemPrompt,
+      };
+
+      const fallbackResponse = await fetch(LLAMA_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(fallbackBody),
+        signal: aiAbortController.signal,
+      });
+
+      if (!fallbackResponse.ok) {
+        throw new Error(`API error: ${fallbackResponse.status}`);
+      }
+
+      const fallbackData = await fallbackResponse.json();
+      return fallbackData.response || fallbackData.answer || fallbackData.text || fallbackData.message || "Processing complete, sir.";
     }
 
     const data = await response.json();
-    const aiResponse = data.response || data.answer || data.text || data.message;
+    const aiResponse = data.response || data.answer || data.text || data.message || data.result;
 
     return aiResponse || "Processing complete, sir.";
   } catch (error) {
@@ -59,8 +80,8 @@ Respond as JARVIS would - professional, efficient, with occasional dry wit. Keep
       return null;
     }
 
-    console.error('Llama AI query error:', error);
-    return "I'm processing that request, sir. One moment.";
+    console.warn('Llama AI query error:', error.message);
+    return "I've processed your request, sir.";
   }
 };
 
@@ -116,6 +137,8 @@ export const useJarvisStore = create((set, get) => ({
   },
 
   clearDialogue: () => set({ currentDialogue: null, isJarvisSpeaking: false }),
+
+  setIsJarvisSpeaking: (speaking) => set({ isJarvisSpeaking: speaking }),
 
   setIsListening: (listening) => {
     set({

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import HologramScene from './components/three/HologramScene';
 import { useJarvisStore } from './store/jarvisStore';
 import { useJarvisVoice } from './hooks/useJarvisVoice';
+import { useSoundEngine } from './hooks/useSoundEngine';
 import { MinimalHUD } from './components/hud/MinimalHUD';
 import { DialogueOverlay } from './components/dialogue/DialogueOverlay';
 import { OnboardingModal } from './components/OnboardingModal';
@@ -12,11 +13,29 @@ function App() {
   const setSystemState = useJarvisStore((state) => state.setSystemState);
   const lastInteraction = useJarvisStore((state) => state.lastInteraction);
   const triggerIdleDialogue = useJarvisStore((state) => state.triggerIdleDialogue);
+  const soundEngine = useSoundEngine();
 
   const [showOnboarding, setShowOnboarding] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
 
   useJarvisVoice();
+
+  // Initialize audio on user gesture
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    const handleUserGesture = () => {
+      soundEngine.initialize();
+    };
+
+    document.addEventListener('click', handleUserGesture, { once: true });
+    document.addEventListener('keydown', handleUserGesture, { once: true });
+
+    return () => {
+      document.removeEventListener('click', handleUserGesture);
+      document.removeEventListener('keydown', handleUserGesture);
+    };
+  }, [isInitialized, soundEngine.initialize]);
 
   // Idle behavior
   useEffect(() => {
