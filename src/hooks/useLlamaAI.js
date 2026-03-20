@@ -1,6 +1,7 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef } from "react";
 
-const LLAMA_API_URL = 'https://answerfinder-ai-proxy.answerfinder.workers.dev/api/query';
+const LLAMA_API_URL =
+  "https://answerfinder-ai-proxy.answerfinder.workers.dev/api/query";
 
 export const useLlamaAI = () => {
   const abortControllerRef = useRef(null);
@@ -25,26 +26,23 @@ export const useLlamaAI = () => {
 - Occasionally show dry humor or technical observations
 
 Current context:
-- User: ${context.userName || 'Sir'}
-- System state: ${context.systemState || 'active'}
+- User: ${context.userName || "Sir"}
+- System state: ${context.systemState || "active"}
 - Time: ${new Date().toLocaleTimeString()}
 
 Respond as JARVIS would - professional, efficient, with occasional dry wit. Keep responses concise unless technical detail is required.`;
 
-    const userQuery = query || 'Hello';
+    const userQuery = (query || "Hello").trim();
 
     const requestBody = {
-      query: userQuery,
-      system_prompt: systemPrompt,
-      max_tokens: 150,
-      temperature: 0.7,
+      inputs: `${systemPrompt}\n\nUser: ${userQuery}\nJARVIS:`,
     };
 
     try {
       const response = await fetch(LLAMA_API_URL, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(requestBody),
         signal: abortControllerRef.current.signal,
@@ -57,23 +55,33 @@ Respond as JARVIS would - professional, efficient, with occasional dry wit. Keep
       const data = await response.json();
 
       // Extract the response text - adjust based on API response structure
-      const aiResponse = data.response || data.answer || data.text || data.message || 'Processing...';
+      const aiResponse =
+        data.generated_text ||
+        data.response ||
+        data.answer ||
+        data.text ||
+        data.message ||
+        "Processing...";
+      const cleanedResponse =
+        typeof aiResponse === "string"
+          ? aiResponse.replace(/^.*JARVIS:\s*/s, "").trim()
+          : "";
 
       lastRequestRef.current = {
         query,
-        response: aiResponse,
+        response: cleanedResponse || aiResponse,
         timestamp: Date.now(),
         success: true,
       };
 
-      return aiResponse;
+      return cleanedResponse || aiResponse;
     } catch (error) {
-      if (error.name === 'AbortError') {
-        console.log('Request aborted');
+      if (error.name === "AbortError") {
+        console.log("Request aborted");
         return null;
       }
 
-      console.error('Llama AI query error:', error);
+      console.error("Llama AI query error:", error);
       lastRequestRef.current = {
         query,
         response: null,

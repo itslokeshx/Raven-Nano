@@ -41,15 +41,8 @@ Current context:
 
 Respond as JARVIS would - professional, efficient, with occasional dry wit. Keep responses concise unless technical detail is required.`;
 
-  // Try different request formats
   const requestBody = {
-    query: normalizedQuery,
-    message: normalizedQuery,
-    prompt: normalizedQuery,
-    system_prompt: systemPrompt,
-    system: systemPrompt,
-    max_tokens: 150,
-    temperature: 0.7,
+    inputs: `${systemPrompt}\n\nUser: ${normalizedQuery}\nJARVIS:`,
   };
 
   try {
@@ -78,6 +71,7 @@ Respond as JARVIS would - professional, efficient, with occasional dry wit. Keep
     }
 
     const aiResponse =
+      data.generated_text ||
       data.response ||
       data.answer ||
       data.text ||
@@ -85,7 +79,12 @@ Respond as JARVIS would - professional, efficient, with occasional dry wit. Keep
       data.result ||
       data.output;
 
-    return aiResponse || "Processing complete, sir.";
+    const cleanedResponse =
+      typeof aiResponse === "string"
+        ? aiResponse.replace(/^.*JARVIS:\s*/s, "").trim()
+        : "";
+
+    return cleanedResponse || aiResponse || "Processing complete, sir.";
   } catch (error) {
     if (error.name === "AbortError") {
       return null;
