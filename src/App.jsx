@@ -13,18 +13,18 @@ function App() {
   const triggerIdleDialogue = useJarvisStore(
     (state) => state.triggerIdleDialogue,
   );
-  const soundEngine = useSoundEngine();
+  const { initialize: initSound, playWakeUp } = useSoundEngine();
+  const { initialize: initVoice } = useJarvisVoice();
 
   const [showOnboarding, setShowOnboarding] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
-
-  useJarvisVoice();
 
   useEffect(() => {
     if (!isInitialized) return;
 
     const handleUserGesture = () => {
-      soundEngine.initialize();
+      initSound();
+      initVoice();
     };
 
     document.addEventListener("click", handleUserGesture, { once: true });
@@ -34,7 +34,7 @@ function App() {
       document.removeEventListener("click", handleUserGesture);
       document.removeEventListener("keydown", handleUserGesture);
     };
-  }, [isInitialized, soundEngine.initialize]);
+  }, [isInitialized, initSound, initVoice]);
 
   useEffect(() => {
     if (systemState !== "active") return;
@@ -49,15 +49,21 @@ function App() {
     return () => clearInterval(interval);
   }, [systemState, lastInteraction, triggerIdleDialogue]);
 
-  const handleInitialize = useCallback(() => {
+  const handleInitialize = useCallback(async () => {
+    // Initialize audio FIRST (user gesture required)
+    await Promise.all([initSound(), initVoice()]);
+
     setShowOnboarding(false);
     setIsInitialized(true);
     setSystemState("booting");
 
+    // Play boot sound
+    setTimeout(() => playWakeUp(), 100);
+
     setTimeout(() => {
       setSystemState("active");
     }, 1500);
-  }, [setSystemState]);
+  }, [setSystemState, initSound, initVoice, playWakeUp]);
 
   return (
     <div className="fixed inset-0 bg-black">
