@@ -1,11 +1,10 @@
 import React, { useEffect, useCallback, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import HologramScene from "./components/three/HologramScene";
 import { useJarvisStore } from "./store/jarvisStore";
 import { useJarvisVoice } from "./hooks/useJarvisVoice";
 import { useSoundEngine } from "./hooks/useSoundEngine";
 import { MinimalHUD } from "./components/hud/MinimalHUD";
-import { DialogueOverlay } from "./components/dialogue/DialogueOverlay";
 import { OnboardingModal } from "./components/OnboardingModal";
 
 function App() {
@@ -22,7 +21,6 @@ function App() {
 
   useJarvisVoice();
 
-  // Initialize audio on user gesture
   useEffect(() => {
     if (!isInitialized) return;
 
@@ -39,7 +37,6 @@ function App() {
     };
   }, [isInitialized, soundEngine.initialize]);
 
-  // Idle behavior
   useEffect(() => {
     if (systemState !== "active") return;
 
@@ -58,44 +55,27 @@ function App() {
     setIsInitialized(true);
     setSystemState("booting");
 
-    // Simulate boot completion after animation
     setTimeout(() => {
       setSystemState("active");
-    }, 3000);
+    }, 2000);
   }, [setSystemState]);
 
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-
   return (
-    <div className="relative w-full h-[100dvh] bg-[#0a0a0f] overflow-hidden">
-      {/* Subtle gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0d1117] via-[#0a0a0f] to-[#050508]" />
-
-      {/* Ambient glow behind hologram - reduced on mobile */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div
-          className={`rounded-full transition-all ${isMobile ? "blur-[72px] w-[240px] h-[240px] bg-cyan-500/4" : "blur-[120px] w-[600px] h-[600px] bg-cyan-500/5"}`}
-        />
+    <div className="fixed inset-0 bg-black">
+      {/* Subtle animated background */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(34,211,238,0.03),transparent)]" />
+        <div className="absolute inset-0 opacity-20">
+          <HologramScene />
+        </div>
       </div>
 
-      {/* 3D Hologram Scene */}
-      <HologramScene />
-
-      {/* Main Content */}
+      {/* Content */}
       <AnimatePresence mode="wait">
         {showOnboarding ? (
           <OnboardingModal key="onboarding" onStart={handleInitialize} />
         ) : (
-          <motion.div
-            key="main"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8 }}
-            className="relative z-10 w-full h-full"
-          >
-            <MinimalHUD />
-            <DialogueOverlay />
-          </motion.div>
+          <MinimalHUD key="main" />
         )}
       </AnimatePresence>
     </div>

@@ -9,17 +9,12 @@ export const MinimalHUD = () => {
   const isJarvisSpeaking = useJarvisStore((state) => state.isJarvisSpeaking);
   const isListening = useJarvisStore((state) => state.isListening);
   const setIsListening = useJarvisStore((state) => state.setIsListening);
-  const handleVoiceCommand = useJarvisStore(
-    (state) => state.handleVoiceCommand,
-  );
-  const triggerAlert = useJarvisStore((state) => state.triggerAlert);
+  const currentDialogue = useJarvisStore((state) => state.currentDialogue);
 
-  const { playButtonClick, playAlert } = useSoundEngine();
+  const { playButtonClick } = useSoundEngine();
   const { isSupported, interimTranscript } = useVoiceRecognition();
 
-  const [inputValue, setInputValue] = useState("");
   const [time, setTime] = useState(new Date());
-  const [submitNotice, setSubmitNotice] = useState(null);
 
   // Update clock
   useEffect(() => {
@@ -27,80 +22,45 @@ export const MinimalHUD = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const handleSubmit = useCallback(
-    (e) => {
-      e.preventDefault();
-      const trimmed = inputValue.trim();
-
-      if (trimmed) {
-        handleVoiceCommand(trimmed);
-        setInputValue("");
-        setSubmitNotice("Sent");
-      }
-    },
-    [inputValue, handleVoiceCommand],
-  );
-
-  useEffect(() => {
-    if (!submitNotice) return;
-
-    const timeout = setTimeout(() => {
-      setSubmitNotice(null);
-    }, 1200);
-
-    return () => clearTimeout(timeout);
-  }, [submitNotice]);
-
-  const handleMicToggle = () => {
+  const handleMicToggle = useCallback(() => {
     playButtonClick();
     if (isSupported && systemState === "active") {
       setIsListening(!isListening);
     }
-  };
+  }, [isListening, isSupported, systemState, playButtonClick, setIsListening]);
 
-  const handleAlert = () => {
-    playAlert();
-    triggerAlert();
-  };
-
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  const isActive = systemState === "active";
+  const isVoiceActive = isListening || isJarvisSpeaking;
 
   return (
-    <div className="relative w-full h-full flex flex-col pb-[max(env(safe-area-inset-bottom),0.25rem)]">
-      {/* Top Bar - Minimal, responsive */}
-      <header
-        className={`flex items-center justify-between transition-all ${isMobile ? "px-4 py-3" : "px-6 py-4 md:px-8 md:py-6"}`}
-      >
-        <div className="flex items-center gap-2 md:gap-3">
+    <div className="fixed inset-0 flex flex-col">
+      {/* Top Bar - Ultra minimal */}
+      <header className="flex items-center justify-between px-6 py-4">
+        {/* Status dot */}
+        <div className="flex items-center gap-3">
           <div className="relative">
-            <div
-              className={`
-              w-1.5 h-1.5 md:w-2 md:h-2 rounded-full transition-all duration-500
-              ${systemState === "active" ? "bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)]" : "bg-white/30"}
-            `}
+            <motion.div
+              animate={{
+                backgroundColor: isActive ? "#22d3ee" : "#ffffff33",
+                boxShadow: isActive ? "0 0 12px rgba(34,211,238,0.6)" : "none",
+              }}
+              className="w-2 h-2 rounded-full"
             />
-            {systemState === "active" && (
+            {isActive && (
               <motion.div
-                animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
+                animate={{ scale: [1, 2, 1], opacity: [0.5, 0, 0.5] }}
                 transition={{ duration: 2, repeat: Infinity }}
                 className="absolute inset-0 rounded-full border border-cyan-400/50"
               />
             )}
           </div>
-          <span className="text-white/50 text-[10px] md:text-xs tracking-[0.15em] md:tracking-[0.2em] uppercase font-light">
-            {isMobile
-              ? systemState === "active"
-                ? "ON"
-                : "OFF"
-              : systemState === "active"
-                ? "Online"
-                : "Standby"}
+          <span className="text-white/30 text-xs tracking-[0.2em] uppercase font-light">
+            {isActive ? "ONLINE" : "STANDBY"}
           </span>
         </div>
 
-        <div
-          className={`text-white/30 font-light tabular-nums ${isMobile ? "text-[11px]" : "text-sm"}`}
-        >
+        {/* Time */}
+        <div className="text-white/20 text-xs font-light tabular-nums tracking-wider">
           {time.toLocaleTimeString("en-US", {
             hour12: false,
             hour: "2-digit",
@@ -109,209 +69,140 @@ export const MinimalHUD = () => {
         </div>
       </header>
 
-      {/* Center - Hologram placeholder */}
+      {/* Center - Voice Orb */}
       <div className="flex-1 flex items-center justify-center">
-        {/* Status indicator when speaking */}
-        <AnimatePresence>
-          {(isJarvisSpeaking || isListening) && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center"
-            >
-              <div className="flex items-center justify-center gap-1 mb-2">
-                {[...Array(3)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    animate={{
-                      height: isListening
-                        ? [4, 24, 4]
-                        : [4, 16 + Math.random() * 16, 4],
-                    }}
-                    transition={{
-                      duration: 0.5,
-                      repeat: Infinity,
-                      delay: i * 0.1,
-                    }}
-                    className="w-0.5 bg-cyan-400/80 rounded-full"
-                  />
-                ))}
-              </div>
-              <p className="text-cyan-400/60 text-xs tracking-wider uppercase">
-                {isListening ? "Listening..." : "Speaking"}
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Bottom - Input Area */}
-      <footer
-        className={`${isMobile ? "px-3 py-4" : "px-6 py-6 md:px-8 md:py-8"}`}
-      >
-        <div className="max-w-2xl mx-auto">
-          {/* Sent notice */}
+        <div className="relative">
+          {/* Outer glow rings */}
           <AnimatePresence>
-            {submitNotice && (
-              <motion.div
-                initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                transition={{ duration: 0.18 }}
-                className="mb-3 flex justify-center"
-              >
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-1 text-[11px] tracking-[0.14em] uppercase text-cyan-200/90">
-                  <span className="w-1 h-1 rounded-full bg-cyan-300" />
-                  {submitNotice}
-                </div>
-              </motion.div>
+            {isVoiceActive && (
+              <>
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1.4, opacity: 0.3 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="absolute inset-0 -m-12 rounded-full border border-cyan-400/20"
+                />
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1.6, opacity: 0.2 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                  className="absolute inset-0 -m-20 rounded-full border border-cyan-400/10"
+                />
+              </>
             )}
           </AnimatePresence>
 
-          {/* Interim transcript display */}
+          {/* Main orb */}
+          <motion.button
+            onClick={handleMicToggle}
+            disabled={!isSupported || !isActive}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="relative w-20 h-20 rounded-full flex items-center justify-center transition-all duration-500"
+            style={{
+              background: isListening
+                ? "radial-gradient(circle, rgba(34,211,238,0.2) 0%, transparent 70%)"
+                : "transparent",
+            }}
+          >
+            {/* Orb border */}
+            <div
+              className={`absolute inset-0 rounded-full border transition-all duration-500 ${
+                isListening
+                  ? "border-cyan-400/50"
+                  : isJarvisSpeaking
+                    ? "border-cyan-400/30"
+                    : "border-white/10"
+              }`}
+            />
+
+            {/* Inner glow */}
+            <motion.div
+              animate={{
+                opacity: isVoiceActive ? 1 : 0.3,
+              }}
+              className="absolute inset-2 rounded-full bg-gradient-to-b from-white/5 to-transparent"
+            />
+
+            {/* Mic icon */}
+            <svg
+              className={`w-7 h-7 transition-colors duration-300 ${
+                isListening
+                  ? "text-cyan-400"
+                  : isJarvisSpeaking
+                    ? "text-cyan-400/70"
+                    : "text-white/40"
+              }`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.5}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+              />
+            </svg>
+
+            {/* Pulsing ring when listening */}
+            {isListening && (
+              <motion.div
+                animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+                className="absolute inset-0 rounded-full border-2 border-cyan-400/30"
+              />
+            )}
+          </motion.button>
+
+          {/* Interim transcript - appears above orb */}
           <AnimatePresence>
             {interimTranscript && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className={`text-center ${isMobile ? "mb-3" : "mb-4"}`}
+                className="absolute -top-16 left-1/2 -translate-x-1/2 whitespace-nowrap"
               >
-                <p
-                  className={`text-white/40 ${isMobile ? "text-xs" : "text-sm"}`}
-                >
+                <p className="text-cyan-400/70 text-sm font-light tracking-wide">
                   {interimTranscript}
                 </p>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Input Bar */}
-          <form onSubmit={handleSubmit} className="relative">
-            <div
-              className={`
-              relative flex items-center gap-2 md:gap-3
-              bg-white/5 backdrop-blur-sm rounded-2xl md:rounded-full
-              border transition-all duration-300
-              ${isMobile ? "py-2" : "py-3"}
-              ${isListening ? "border-cyan-400/50 shadow-[0_0_20px_rgba(34,211,238,0.15)]" : "border-white/10 hover:border-white/20"}
-            `}
-            >
-              {/* Mic Button */}
-              <button
-                type="button"
-                onClick={handleMicToggle}
-                disabled={!isSupported}
-                className={`
-                  flex-shrink-0 ${isMobile ? "w-11 h-11" : "w-10 h-10"} rounded-full flex items-center justify-center
-                  transition-all duration-300 ${isMobile ? "ml-1.5" : "ml-1"}
-                  ${
-                    isListening
-                      ? "bg-cyan-400/20 text-cyan-400"
-                      : "hover:bg-white/10 text-white/50 hover:text-white/70"
-                  }
-                  ${!isSupported && "opacity-40 cursor-not-allowed"}
-                `}
+          {/* Current dialogue text - appears below orb */}
+          <AnimatePresence>
+            {currentDialogue?.text && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="absolute -bottom-20 left-1/2 -translate-x-1/2 max-w-xs"
               >
-                <svg
-                  className={isMobile ? "w-3.5 h-3.5" : "w-4 h-4"}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-                  />
-                </svg>
-              </button>
-
-              {/* Text Input */}
-              <input
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder={isListening ? "Listening..." : "Type a command..."}
-                disabled={systemState !== "active"}
-                className={`
-                  flex-1 bg-transparent px-2 md:px-3 ${isMobile ? "py-2.5" : "py-3"} pr-1 md:pr-2
-                  text-white/80 placeholder:text-white/30
-                  ${isMobile ? "text-[13px]" : "text-sm"} focus:outline-none
-                `}
-              />
-
-              {/* Send Button */}
-              <button
-                type="submit"
-                disabled={!inputValue.trim()}
-                className={`
-                  flex-shrink-0 ${isMobile ? "w-11 h-11" : "w-10 h-10"} rounded-full
-                  flex items-center justify-center
-                  text-white/50 hover:text-cyan-400
-                  disabled:opacity-30 disabled:cursor-not-allowed
-                  transition-all duration-200 ${isMobile ? "mr-1.5" : "mr-1"}
-                `}
-              >
-                <svg
-                  className={isMobile ? "w-3.5 h-3.5" : "w-4 h-4"}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M12 19V5m0 0l-7 7m7-7l7 7"
-                  />
-                </svg>
-              </button>
-            </div>
-          </form>
-
-          {/* Quick Actions - Desktop only */}
-          <div className="hidden md:flex items-center justify-center gap-2 mt-4">
-            <QuickAction label="Status" command="status report" />
-            <QuickAction label="Time" command="what's the time" />
-            <QuickAction label="Power" command="power levels" />
-            <button
-              onClick={handleAlert}
-              className="px-3 py-1 text-[10px] uppercase tracking-wider text-white/30
-                         hover:text-red-400 transition-colors border border-white/10
-                         hover:border-red-400/30 rounded-full"
-            >
-              Test Alert
-            </button>
-          </div>
+                <p className="text-white/60 text-sm font-light tracking-wide text-center leading-relaxed">
+                  {currentDialogue.text}
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
+      </div>
+
+      {/* Bottom - Hint text */}
+      <footer className="flex items-center justify-center pb-8">
+        <p className="text-white/15 text-xs tracking-[0.15em] uppercase font-light">
+          {isListening
+            ? "Listening..."
+            : isJarvisSpeaking
+              ? "Speaking..."
+              : isActive
+                ? "Tap to speak"
+                : "Say \"Hey Jarvis\""}
+        </p>
       </footer>
     </div>
-  );
-};
-
-// Quick action button component
-const QuickAction = ({ label, command }) => {
-  const handleVoiceCommand = useJarvisStore(
-    (state) => state.handleVoiceCommand,
-  );
-  const { playButtonClick } = useSoundEngine();
-
-  const handleClick = () => {
-    playButtonClick();
-    handleVoiceCommand(command);
-  };
-
-  return (
-    <button
-      onClick={handleClick}
-      className="px-3 py-1 text-[10px] uppercase tracking-wider text-white/30
-                 hover:text-cyan-400 transition-colors border border-white/10
-                 hover:border-cyan-400/30 rounded-full"
-    >
-      {label}
-    </button>
   );
 };
