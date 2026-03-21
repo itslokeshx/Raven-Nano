@@ -23,7 +23,6 @@ export const MinimalHUD = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Typewriter effect for dialogue
   useEffect(() => {
     if (!currentDialogue?.text) {
       setDisplayText("");
@@ -41,7 +40,7 @@ export const MinimalHUD = () => {
       } else {
         clearInterval(typingRef.current);
       }
-    }, 25);
+    }, 30);
 
     return () => {
       if (typingRef.current) clearInterval(typingRef.current);
@@ -60,115 +59,109 @@ export const MinimalHUD = () => {
 
   return (
     <div className="relative w-full h-full flex flex-col">
-      {/* Top bar */}
-      <header className="flex items-center justify-between px-6 py-5">
+      {/* Top Bar */}
+      <header className="flex items-center justify-between px-8 py-6">
         <div className="flex items-center gap-3">
-          <div className="relative flex items-center justify-center">
-            <motion.div
-              animate={{
-                scale: isActive ? [1, 1.2, 1] : 1,
-                opacity: isActive ? 1 : 0.4,
-              }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="w-2 h-2 rounded-full bg-cyan-400"
-              style={{ boxShadow: isActive ? "0 0 12px #22d3ee" : "none" }}
-            />
+          {/* Logo */}
+          <div className="flex items-center gap-2">
+            <div className="w-[3px] h-3 bg-white/90 rounded-full" />
+            <span className="text-[11px] text-white/70 font-medium tracking-[0.3em] uppercase">
+              Jarvis
+            </span>
           </div>
-          <span className="text-[11px] text-white/40 font-medium tracking-[0.25em] uppercase">
-            {isActive ? "Online" : "Standby"}
-          </span>
         </div>
 
-        <div className="text-[13px] text-white/25 font-light tracking-widest tabular-nums">
-          {time.toLocaleTimeString("en-US", {
-            hour12: false,
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
+        {/* Status + Time */}
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <motion.div
+              animate={{
+                backgroundColor: isActive ? "#22d3ee" : "rgba(255,255,255,0.2)",
+              }}
+              className="w-1.5 h-1.5 rounded-full"
+            />
+            <span className="text-[10px] text-white/40 tracking-[0.2em] uppercase">
+              {isActive ? "Active" : "Standby"}
+            </span>
+          </div>
+          <div className="text-[13px] text-white/30 font-light tracking-widest tabular-nums">
+            {time.toLocaleTimeString("en-US", {
+              hour12: false,
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </div>
         </div>
       </header>
 
       {/* Center - Voice Interface */}
       <div className="flex-1 flex items-center justify-center">
-        <div className="relative flex flex-col items-center gap-8">
-          {/* Glow background */}
+        <div className="relative flex flex-col items-center">
+          {/* Ambient glow */}
           <AnimatePresence>
             {isVoiceActive && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.5 }}
+                initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.5 }}
-                transition={{ duration: 0.4 }}
-                className="absolute w-80 h-80 rounded-full"
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="absolute w-[300px] h-[300px] pointer-events-none"
                 style={{
-                  background: "radial-gradient(circle, rgba(34,211,238,0.08) 0%, transparent 70%)",
+                  background: "radial-gradient(circle, rgba(34,211,238,0.08) 0%, transparent 60%)",
                 }}
               />
             )}
           </AnimatePresence>
 
-          {/* Orbital rings */}
-          <div className="absolute w-72 h-72 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-              className="absolute inset-0 rounded-full border border-white/[0.03]"
-            />
-            <motion.div
-              animate={{ rotate: -360 }}
-              transition={{ duration: 45, repeat: Infinity, ease: "linear" }}
-              className="absolute inset-4 rounded-full border border-white/[0.02]"
-            />
-          </div>
-
           {/* Main orb */}
           <motion.button
             onClick={handleMicToggle}
             disabled={!isSupported || !isActive}
+            className="relative w-20 h-20 rounded-full flex items-center justify-center"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="relative w-24 h-24 rounded-full flex items-center justify-center group"
           >
             {/* Outer ring */}
-            <motion.div
-              animate={{
+            <div
+              className="absolute inset-0 rounded-full border transition-colors duration-300"
+              style={{
                 borderColor: isListening
                   ? "rgba(34,211,238,0.4)"
-                  : isJarvisSpeaking
-                    ? "rgba(34,211,238,0.25)"
-                    : "rgba(255,255,255,0.08)",
+                  : "rgba(255,255,255,0.08)",
               }}
-              className="absolute inset-0 rounded-full border transition-colors duration-500"
             />
 
             {/* Inner ring */}
-            <div className="absolute inset-3 rounded-full border border-white/[0.05] transition-all duration-500 group-hover:border-white/[0.1]" />
+            <div className="absolute inset-2 rounded-full border border-white/[0.04]" />
 
             {/* Core */}
             <motion.div
               animate={{
-                background: isListening
-                  ? "radial-gradient(circle, rgba(34,211,238,0.15) 0%, transparent 70%)"
-                  : "radial-gradient(circle, rgba(255,255,255,0.02) 0%, transparent 70%)",
+                scale: isListening ? [1, 1.02, 1] : 1,
               }}
-              className="absolute inset-6 rounded-full"
+              transition={{ duration: 1.5, repeat: isListening ? Infinity : 0 }}
+              className="absolute inset-4 rounded-full"
+              style={{
+                background: isListening
+                  ? "radial-gradient(circle, rgba(34,211,238,0.1) 0%, transparent 70%)"
+                  : "radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%)",
+              }}
             />
 
-            {/* Pulse rings when active */}
+            {/* Pulse rings */}
             <AnimatePresence>
               {isListening && (
                 <>
                   <motion.div
-                    initial={{ scale: 1, opacity: 0.4 }}
-                    animate={{ scale: 1.5, opacity: 0 }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                    className="absolute inset-0 rounded-full border border-cyan-400/30"
+                    initial={{ scale: 1, opacity: 0.3 }}
+                    animate={{ scale: 1.6, opacity: 0 }}
+                    transition={{ duration: 1.2, repeat: Infinity }}
+                    className="absolute inset-0 rounded-full border border-cyan-400/20"
                   />
                   <motion.div
-                    initial={{ scale: 1, opacity: 0.3 }}
-                    animate={{ scale: 1.8, opacity: 0 }}
-                    transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }}
-                    className="absolute inset-0 rounded-full border border-cyan-400/20"
+                    initial={{ scale: 1, opacity: 0.2 }}
+                    animate={{ scale: 2, opacity: 0 }}
+                    transition={{ duration: 1.2, repeat: Infinity, delay: 0.4 }}
+                    className="absolute inset-0 rounded-full border border-cyan-400/10"
                   />
                 </>
               )}
@@ -176,13 +169,14 @@ export const MinimalHUD = () => {
 
             {/* Mic icon */}
             <svg
-              className={`relative z-10 w-8 h-8 transition-all duration-300 ${
-                isListening
-                  ? "text-cyan-400"
+              className="relative z-10 w-6 h-6 transition-colors duration-300"
+              style={{
+                color: isListening
+                  ? "rgba(34,211,238,0.9)"
                   : isJarvisSpeaking
-                    ? "text-cyan-400/80"
-                    : "text-white/30 group-hover:text-white/50"
-              }`}
+                    ? "rgba(34,211,238,0.7)"
+                    : "rgba(255,255,255,0.35)",
+              }}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -200,34 +194,35 @@ export const MinimalHUD = () => {
           <AnimatePresence>
             {interimTranscript && (
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="absolute top-32 text-center px-6"
+                exit={{ opacity: 0, y: -16 }}
+                className="mt-8 text-center px-8"
               >
-                <p className="text-cyan-400/70 text-sm font-light tracking-wide max-w-xs">
+                <p className="text-sm text-cyan-400/60 font-light tracking-wide">
                   "{interimTranscript}"
                 </p>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Response text */}
-          <div className="min-h-[4rem] flex items-center justify-center px-6">
+          {/* Response */}
+          <div className="mt-8 min-h-[3rem] flex items-center justify-center px-8">
             <AnimatePresence mode="wait">
               {displayText && (
                 <motion.p
-                  key={displayText}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
-                  className="text-white/70 text-center font-light tracking-wide leading-relaxed max-w-md"
+                  className="text-center font-light tracking-wide leading-relaxed max-w-lg"
+                  style={{ color: "rgba(255,255,255,0.6)", fontSize: "15px" }}
                 >
                   {displayText}
                   <motion.span
                     animate={{ opacity: [0.3, 1, 0.3] }}
                     transition={{ duration: 0.8, repeat: Infinity }}
-                    className="inline-block w-[2px] h-4 bg-cyan-400/50 ml-0.5 align-middle"
+                    className="inline-block w-[2px] h-4 ml-0.5 align-middle"
+                    style={{ backgroundColor: "rgba(34,211,238,0.5)" }}
                   />
                 </motion.p>
               )}
@@ -237,8 +232,11 @@ export const MinimalHUD = () => {
       </div>
 
       {/* Bottom */}
-      <footer className="flex flex-col items-center pb-8 gap-3">
-        <p className="text-[11px] text-white/20 font-medium tracking-[0.2em] uppercase">
+      <footer className="pb-8 text-center">
+        <p
+          className="text-[10px] font-medium tracking-[0.25em] uppercase"
+          style={{ color: "rgba(255,255,255,0.2)" }}
+        >
           {isListening
             ? "Listening"
             : isJarvisSpeaking

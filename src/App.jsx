@@ -1,6 +1,5 @@
 import React, { useEffect, useCallback, useState } from "react";
 import { AnimatePresence } from "framer-motion";
-import HologramScene from "./components/three/HologramScene";
 import { useJarvisStore } from "./store/jarvisStore";
 import { useJarvisVoice } from "./hooks/useJarvisVoice";
 import { useSoundEngine } from "./hooks/useSoundEngine";
@@ -57,20 +56,11 @@ function App() {
 
     setTimeout(() => {
       setSystemState("active");
-    }, 2000);
+    }, 1500);
   }, [setSystemState]);
 
   return (
     <div className="fixed inset-0 bg-black">
-      {/* Subtle animated background */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(34,211,238,0.03),transparent)]" />
-        <div className="absolute inset-0 opacity-20">
-          <HologramScene />
-        </div>
-      </div>
-
-      {/* Content */}
       <AnimatePresence mode="wait">
         {showOnboarding ? (
           <OnboardingModal key="onboarding" onStart={handleInitialize} />
