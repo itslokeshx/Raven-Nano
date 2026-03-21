@@ -1,0 +1,201 @@
+# JARVIS — Complete Product Document
+### Just A Rather Very Intelligent System
+**Version 1.0 — Challenge Submission Build**
+
+---
+
+## 1. THE STORY (Your DEV post opening)
+
+CorteXia was my attempt to build a life OS. It had 12 databases, multi-LLM fallback, voice control, habit graphs, mood tracking. It was powerful. But it was silent. It waited for me to open it. It never talked back. It never checked on me. It never knew how I was feeling.
+
+Real intelligence doesn't wait.
+
+So I rebuilt it. Not as a dashboard. Not as a productivity app. As a presence. Something that knows my tasks, reads my mails, tracks my expenses, listens when I feel low — and lives inside the two things I already use every day: Telegram and Notion.
+
+This is JARVIS.
+
+---
+
+## 2. WHAT JARVIS IS
+
+JARVIS is a personal AI system that:
+- You talk to via voice or text on a web app
+- You message via Telegram from anywhere
+- Reads and writes your entire life into Notion via MCP
+- Checks on you every 2 hours without being asked
+- Knows your tasks, expenses, journal, and emotional state
+- Acts like a chief of staff, not a chatbot
+
+**The one-line pitch:**
+"Tell Jarvis anything. It organizes your life in Notion, reminds you what matters, and actually talks back."
+
+---
+
+## 3. THE PROBLEM IT SOLVES
+
+Every productivity app has the same flaw — it waits for you.
+You have to open it. You have to type in it. You have to remember to use it.
+
+Real life doesn't work like that.
+
+Real life is: you're walking to class and you remember you need to do something. You're eating and you just spent money. You're lying in bed at midnight feeling lost. You need a system that works the way your brain works — conversationally, in the moment, without friction.
+
+That's what JARVIS is. Zero friction between thought and organization.
+
+---
+
+## 4. WHO IT'S FOR
+
+**Primary:** Students and solo builders who want their life organized without the overhead of maintaining a system.
+
+**Secondary:** Anyone who has tried and abandoned Notion because setup was too painful.
+
+**The person:** Someone who has 20 open browser tabs, a WhatsApp full of voice notes to themselves, and a Notion workspace they built once and never opened again.
+
+---
+
+## 5. CORE FEATURES — CHALLENGE BUILD (8 days)
+
+### Feature 1: Voice + Chat Interface (Web App)
+**What it does:** You open the web app and talk or type to Jarvis. It responds with voice and text. Dark cinematic UI — not a chat window, an experience.
+
+**Why it matters:** This is the personality layer. Jarvis isn't a form. It's a conversation.
+
+**Tech:** Web Speech API (voice input) + ElevenLabs free tier (voice output) + React frontend
+
+**Demo moment:** User says "Jarvis what should I work on right now?" — Jarvis reads the task database from Notion via MCP and replies out loud with context and attitude.
+
+---
+
+### Feature 2: Telegram Interface
+**What it does:** Same Jarvis brain, accessible via Telegram. Text or voice note. Works on your phone without opening the web app.
+
+**Why it matters:** This is the "I'm in class and can't open my laptop" interface. Life happens on your phone.
+
+**Tech:** python-telegram-bot library. Voice notes are transcribed via Whisper API then processed.
+
+**Demo moment:** User sends a voice note on Telegram saying "I finished the login page" — Jarvis marks the task complete in Notion and replies "Good. You have 2 tasks left for today."
+
+---
+
+### Feature 3: Full Task CRUD via Voice and Telegram
+**What it does:** Complete task management through conversation.
+
+- "Add build the portfolio to my tasks" → creates task in Notion
+- "I finished the auth fix" → marks task complete in Notion
+- "What are my tasks for today?" → reads Notion and replies
+- "Delete the old API task" → removes from Notion
+- "Move the deploy task to tomorrow" → updates due date in Notion
+
+**Why it matters:** This is Notion MCP as the genuine irreplaceable core. Every operation goes through MCP bidirectionally.
+
+**Tech:** Claude API with function calling + Notion MCP write operations
+
+**Demo moment:** Live split screen — user speaks on left, Notion database updates in real time on right.
+
+---
+
+### Feature 4: Expense Logging via Voice and Telegram
+**What it does:** Frictionless expense tracking through conversation.
+
+- "Spent 20 rupees on chai" → logs to Notion expenses database
+- "Bought groceries for 450" → categorizes and logs automatically
+- "How much have I spent today?" → reads Notion and summarizes
+- "What's my biggest spending category this week?" → analyzes and answers
+
+**Why it matters:** Manual expense tracking fails because it requires friction. Saying it out loud has zero friction.
+
+**Tech:** Claude extracts amount + category + description from natural language. Notion MCP writes to expenses database.
+
+**Demo moment:** User says "spent 20 rupees on chai" → Notion expense entry appears in 3 seconds.
+
+---
+
+### Feature 5: Voice Journal
+**What it does:** You speak your thoughts. Jarvis writes a beautifully formatted journal entry in Notion.
+
+- Speak for 30 seconds about your day
+- Jarvis transcribes, structures, and formats it
+- Writes it to a dated journal page in Notion
+- Tags emotions, key events, and action items automatically
+- "Read me my journal from last Tuesday" → Jarvis reads it back
+
+**Why it matters:** Journaling is proven to help mental clarity. Nobody does it because writing is slow. Speaking is natural.
+
+**Tech:** Whisper transcription + Claude formatting + Notion MCP page creation
+
+**Demo moment:** 30-second voice note becomes a structured, beautiful Notion journal page in real time.
+
+---
+
+### Feature 6: Proactive 2-Hour Check-ins via Telegram
+**What it does:** Without being asked, every 2 hours Jarvis reads your Notion workspace and sends you a contextual Telegram message.
+
+Not a generic reminder. A real message based on your actual situation:
+
+- "You have 3 tasks due today. You've completed 1. The deploy task has been sitting untouched for 4 hours."
+- "It's 4pm. You usually have your lowest energy now. Want me to queue up the smaller tasks?"
+- "You haven't logged any expenses today. Usually you spend on food around this time."
+
+**Why it matters:** This is the feature that makes Jarvis feel alive. It notices things. It proactively helps. No other submission in this challenge does this.
+
+**Tech:** APScheduler cron job every 2 hours. Reads Notion via MCP. Generates contextual message via Claude. Sends via Telegram bot.
+
+**Demo moment:** Show the scheduler running live. Show it reading Notion. Show the Telegram message arriving unprompted.
+
+---
+
+### Feature 7: Therapist Mode
+**What it does:** When you say "I feel low," "I'm stressed," "everything is out of control," or any emotional signal — Jarvis switches into a different mode.
+
+It reads your ENTIRE Notion workspace via MCP:
+- Your current tasks and what's overdue
+- Your recent journal entries
+- Your recent expenses
+- Your recent conversation history
+
+Then it responds with genuine empathy and context-aware advice. Not generic. Not "have you tried meditating?" Based on YOUR actual situation.
+
+"I can see you have 4 overdue tasks and you mentioned feeling overwhelmed in your journal yesterday. Let's not look at the whole list. What's the one thing that would make tomorrow feel manageable?"
+
+**Why it matters:** This is the feature that will be quoted in the winner announcement. No other submission has emotional intelligence. This is what separates Jarvis from every productivity tool ever built.
+
+**Tech:** Emotional signal detection in Claude system prompt. Full Notion context injection via MCP. Therapist-mode prompt engineering.
+
+**Demo moment:** User says "Jarvis I'm really stressed right now" — Jarvis reads the full context and responds with something that makes the judge feel something.
+
+---
+
+### Feature 8: Gmail Awareness
+**What it does:** Connect your Gmail. Ask Jarvis about your emails conversationally.
+
+- "Any important mails today?" → reads inbox, filters, summarizes top 3
+- "Did anyone reply to my job application?" → searches for relevant emails
+- "Summarize the last email from Anthropic" → finds and summarizes
+- Important emails get automatically logged to a Notion page
+
+**Why it matters:** Email is where important things get buried. Jarvis surfaces them without you having to open Gmail.
+
+**Tech:** Gmail API + OAuth 2.0. Claude analyzes importance. Notion MCP logs important ones.
+
+**Demo moment:** "Any important mails?" → 3-second pause → Jarvis summarizes top emails out loud.
+
+---
+
+## 6. NOTION MCP — WHY IT'S THE IRREPLACEABLE CORE
+
+This is critical for the challenge. Every judge will ask: "why does this NEED Notion MCP?"
+
+Here's the answer:
+
+Jarvis doesn't just store data in Notion. Notion IS Jarvis's brain. Here's the difference:
+
+**Without MCP (just API):** Jarvis writes to Notion. One direction. Notion is a database.
+
+**With MCP:** Jarvis reads your existing Notion structure, understands your context, writes back intelligently, and makes decisions based on what it finds. Notion is a living memory.
+
+When Jarvis sends a proactive check-in — it's reading your tasks, journals, and expenses via MCP to generate something contextual. When Jarvis gives therapy advice — it's reading your journal history via MCP. When Jarvis answers "what should I work on?" — it's reading your task priorities via MCP.
+
+Remove MCP and Jarvis becomes a dumb form. With MCP it becomes intelligent because it knows your life.
+
+
