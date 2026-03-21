@@ -70,7 +70,8 @@ export const useJarvisVoice = () => {
   // Initialize audio context
   const initAudioContext = useCallback(() => {
     if (!audioContextRef.current) {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const AudioContextClass = window.AudioContext || /** @type {any} */ (window).webkitAudioContext;
+      const ctx = new AudioContextClass();
       audioContextRef.current = ctx;
     }
     return audioContextRef.current;

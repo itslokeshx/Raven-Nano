@@ -4,21 +4,23 @@ import { motion } from "framer-motion";
 export const VoiceVisualizer = ({ isActive, isSpeaking }) => {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
-  const analyserRef = useRef(null);
-  const dataArrayRef = useRef(null);
-  const audioContextRef = useRef(null);
-  const sourceRef = useRef(null);
 
-  // Create simulated waveform data
+  // Create smooth waveform data
   const generateWaveform = useCallback((time) => {
-    const bars = 32;
+    const bars = 24; // 24 bars for symmetric look
     const values = [];
 
     for (let i = 0; i < bars; i++) {
-      const base = Math.sin(time * 0.003 + i * 0.2) * 0.5 + 0.5;
-      const noise = Math.random() * 0.3;
-      const intensity = isSpeaking ? 0.8 : 0.4;
-      values.push((base + noise) * intensity);
+      // Create smooth wave that goes around the circle
+      const angle = (i / bars) * Math.PI * 2;
+      const wave1 = Math.sin(time * 0.005 + angle * 3) * 0.5 + 0.5;
+      const wave2 = Math.sin(time * 0.003 + angle * 2) * 0.3 + 0.3;
+      const noise = Math.random() * 0.15;
+      const intensity = isSpeaking ? 0.9 : 0.5;
+
+      // Combine waves for organic but symmetric look
+      const value = Math.min(1, (wave1 * 0.6 + wave2 * 0.3 + noise) * intensity);
+      values.push(value);
     }
 
     return values;
@@ -30,7 +32,7 @@ export const VoiceVisualizer = ({ isActive, isSpeaking }) => {
 
     const ctx = canvas.getContext("2d");
     const dpr = window.devicePixelRatio || 1;
-    const size = 160;
+    const size = 200;
 
     canvas.width = size * dpr;
     canvas.height = size * dpr;
@@ -44,10 +46,10 @@ export const VoiceVisualizer = ({ isActive, isSpeaking }) => {
       ctx.clearRect(0, 0, size, size);
 
       if (!isActive) {
-        // Draw idle state - subtle pulse
-        const pulse = Math.sin(time * 0.002) * 0.1 + 0.15;
+        // Draw idle state - subtle pulse ring
+        const pulse = Math.sin(time * 0.002) * 0.1 + 0.2;
         ctx.beginPath();
-        ctx.arc(size / 2, size / 2, 30, 0, Math.PI * 2);
+        ctx.arc(size / 2, size / 2, 50, 0, Math.PI * 2);
         ctx.strokeStyle = `rgba(34, 211, 238, ${pulse})`;
         ctx.lineWidth = 1;
         ctx.stroke();
@@ -60,50 +62,59 @@ export const VoiceVisualizer = ({ isActive, isSpeaking }) => {
       // Active visualization
       const values = generateWaveform(time);
       const barCount = values.length;
-      const barWidth = 3;
-      const gap = 2;
-      const radius = 45;
+      const centerX = size / 2;
+      const centerY = size / 2;
+      const baseRadius = 55;
+      const maxBarLength = 35;
+      const barWidth = 4;
 
-      // Draw circular bars
+      // Draw symmetric circular bars
       for (let i = 0; i < barCount; i++) {
-        const angle = (i / barCount) * Math.PI * 2 - Math.PI / 2;
+        const angle = (i / barCount) * Math.PI * 2 - Math.PI / 2; // Start from top
         const value = values[i];
-        const barHeight = value * 25 + 5;
+        const barLength = value * maxBarLength;
 
-        const x = size / 2 + Math.cos(angle) * radius;
-        const y = size / 2 + Math.sin(angle) * radius;
+        // Calculate start and end points
+        const innerX = centerX + Math.cos(angle) * baseRadius;
+        const innerY = centerY + Math.sin(angle) * baseRadius;
+        const outerX = centerX + Math.cos(angle) * (baseRadius + barLength);
+        const outerY = centerY + Math.sin(angle) * (baseRadius + barLength);
 
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(angle + Math.PI / 2);
+        // Draw bar with gradient
+        const gradient = ctx.createLinearGradient(innerX, innerY, outerX, outerY);
 
-        // Draw bar
-        const gradient = ctx.createLinearGradient(0, 0, 0, barHeight);
         if (isSpeaking) {
-          gradient.addColorStop(0, `rgba(34, 211, 238, ${0.8 + value * 0.2})`);
+          gradient.addColorStop(0, `rgba(34, 211, 238, 0.4)`);
+          gradient.addColorStop(0.5, `rgba(34, 211, 238, ${0.6 + value * 0.4})`);
           gradient.addColorStop(1, `rgba(34, 211, 238, 0)`);
         } else {
-          gradient.addColorStop(0, `rgba(99, 102, 241, ${0.6 + value * 0.2})`);
+          gradient.addColorStop(0, `rgba(99, 102, 241, 0.3)`);
+          gradient.addColorStop(0.5, `rgba(99, 102, 241, ${0.4 + value * 0.3})`);
           gradient.addColorStop(1, `rgba(99, 102, 241, 0)`);
         }
 
-        ctx.fillStyle = gradient;
-        ctx.fillRect(-barWidth / 2, 0, barWidth, barHeight);
-
-        // Mirror on other side
-        ctx.fillRect(-barWidth / 2, -barHeight, barWidth, barHeight);
-
-        ctx.restore();
+        ctx.beginPath();
+        ctx.moveTo(innerX, innerY);
+        ctx.lineTo(outerX, outerY);
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = barWidth;
+        ctx.lineCap = "round";
+        ctx.stroke();
       }
 
-      // Inner glow ring
-      const ringOpacity = isSpeaking
-        ? 0.3 + values[0] * 0.3
-        : 0.1 + values[0] * 0.2;
-
+      // Draw inner ring (symmetric circle)
+      const ringPulse = Math.sin(time * 0.003) * 0.1 + 0.3;
       ctx.beginPath();
-      ctx.arc(size / 2, size / 2, radius - 8, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(34, 211, 238, ${ringOpacity})`;
+      ctx.arc(centerX, centerY, baseRadius - 5, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(34, 211, 238, ${isSpeaking ? ringPulse : ringPulse * 0.5})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Draw outer glow ring
+      const outerGlowOpacity = isSpeaking ? 0.15 : 0.08;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, baseRadius + maxBarLength + 5, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(34, 211, 238, ${outerGlowOpacity})`;
       ctx.lineWidth = 1;
       ctx.stroke();
 
@@ -127,7 +138,7 @@ export const VoiceVisualizer = ({ isActive, isSpeaking }) => {
         animate={{ opacity: [0.3, 0.6, 0.3] }}
         transition={{ duration: 2, repeat: Infinity }}
       >
-        <div className="w-16 h-16 rounded-full border border-cyan-400/20" />
+        <div className="w-20 h-20 rounded-full border border-cyan-400/20" />
       </motion.div>
     );
   }
@@ -135,11 +146,10 @@ export const VoiceVisualizer = ({ isActive, isSpeaking }) => {
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0"
+      className="absolute inset-0 m-auto"
       style={{
-        width: "160px",
-        height: "160px",
-        margin: "auto",
+        width: "200px",
+        height: "200px",
       }}
     />
   );
