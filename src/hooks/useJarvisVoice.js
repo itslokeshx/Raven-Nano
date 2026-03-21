@@ -15,7 +15,7 @@ export const useJarvisVoice = () => {
   const [isReady, setIsReady] = useState(false);
   const [engine, setEngine] = useState('loading');
 
-  // Initialize TTS engine - Web Speech only for reliability
+  // Initialize TTS engine
   useEffect(() => {
     let mounted = true;
 
@@ -51,31 +51,10 @@ export const useJarvisVoice = () => {
         return;
       }
 
-      // Try Speechma for high-quality voice
-      if (mounted) {
-        try {
-          // Test if Speechma is available with a simple fetch
-          const testResponse = await fetch('https://api.speechma.com/v1/tts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: 'test', voice: 'kelan', speed: 1.0 }),
-          });
-          if (testResponse.ok || testResponse.status === 400) { // 400 means API works but bad request
-            setEngine('speechma');
-            setIsReady(true);
-            console.log('✓ Speechma TTS loaded (neural voice)');
-            return;
-          }
-        } catch (e) {
-          console.log('Speechma unavailable:', e.message);
-        }
-      }
-
-      // Fallback to Web Speech API (reliable, no WebSocket issues)
+      // Fallback to Web Speech API
       if (mounted && 'speechSynthesis' in window) {
         setEngine('webspeech');
         setIsReady(true);
-        // Warm up voices
         window.speechSynthesis.getVoices();
         console.log('✓ Web Speech API loaded');
       }
@@ -88,7 +67,7 @@ export const useJarvisVoice = () => {
     };
   }, []);
 
-  // Initialize audio context (must be called after user gesture)
+  // Initialize audio context
   const initAudioContext = useCallback(() => {
     if (!audioContextRef.current) {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -97,29 +76,14 @@ export const useJarvisVoice = () => {
     return audioContextRef.current;
   }, []);
 
-  // Resume audio context after user gesture
-  const resumeAudioContext = useCallback(async () => {
-    const ctx = audioContextRef.current;
-    if (ctx && ctx.state === 'suspended') {
-      try {
-        await ctx.resume();
-        console.log('AudioContext resumed');
-      } catch (e) {
-        console.warn('Failed to resume AudioContext:', e);
-      }
-    }
-  }, []);
-
   // Play audio buffer
   const playAudioBuffer = useCallback(async (audioData) => {
-    // Ensure context exists
     if (!audioContextRef.current) {
       initAudioContext();
     }
 
     const ctx = audioContextRef.current;
 
-    // Critical: resume context if suspended (browser autoplay policy)
     if (ctx.state === 'suspended') {
       try {
         await ctx.resume();
@@ -129,7 +93,6 @@ export const useJarvisVoice = () => {
       }
     }
 
-    // Stop current
     if (sourceNodeRef.current) {
       try { sourceNodeRef.current.stop(); } catch (e) {}
     }
@@ -182,53 +145,15 @@ export const useJarvisVoice = () => {
     return false;
   }, [playAudioBuffer]);
 
-  // Speechma TTS - High quality neural voice
-  const speakSpeechma = useCallback(async (text) => {
-    try {
-      // Speechma free TTS API
-      const response = await fetch('https://api.speechma.com/v1/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: text,
-          voice: 'kelan',  // Deep authoritative male voice
-          speed: 1.0,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Speechma API error: ${response.status}`);
-      }
-
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-
-      return new Promise((resolve) => {
-        audio.onended = () => {
-          URL.revokeObjectURL(audioUrl);
-          resolve(true);
-        };
-        audio.onerror = () => {
-          URL.revokeObjectURL(audioUrl);
-          resolve(false);
-        };
-        audio.play().catch(() => resolve(false));
-      });
-    } catch (e) {
-      console.warn('Speechma error:', e.message);
-      return false;
-    }
-  }, []);
-
   // Web Speech API with JARVIS-like voice selection
   const speakWeb = useCallback((text) => {
     return new Promise((resolve) => {
       if (!('speechSynthesis' in window)) { resolve(false); return; }
 
+      // Cancel any ongoing speech
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
 
+      const utterance = new SpeechSynthesisUtterance(text);
       const voices = window.speechSynthesis.getVoices();
 
       // Prioritize male, authoritative voices
@@ -237,8 +162,8 @@ export const useJarvisVoice = () => {
         v.name.includes('Daniel') ||
         v.name.includes('Microsoft David') ||
         v.name.includes('Microsoft Mark') ||
-        v.name.includes('Samantha') || // Good quality on Mac
-        v.name.includes('Karen') // Good on Mac
+        v.name.includes('Samantha') ||
+        v.name.includes('Karen')
       ) || voices.find(v => v.lang.includes('en-GB')) ||
         voices.find(v => v.lang.includes('en-US')) ||
         voices[0];
@@ -248,14 +173,17 @@ export const useJarvisVoice = () => {
         console.log('Using voice:', voice.name);
       }
 
-      // JARVIS-like settings - deeper, slightly slower
-      utterance.pitch = 0.7;  // Lower pitch for authority
-      utterance.rate = 0.92; // Slightly slower for clarity
+      // JARVIS-like settings
+      utterance.pitch = 0.7;
+      utterance.rate = 0.92;
       utterance.volume = 1.0;
 
       utterance.onend = () => resolve(true);
       utterance.onerror = (e) => {
-        console.warn('Speech error:', e);
+        // Don't log abort errors (normal when stopping)
+        if (e.error !== 'aborted' && e.error !== 'canceled') {
+          console.warn('Speech error:', e.error);
+        }
         resolve(false);
       };
 
@@ -276,13 +204,6 @@ export const useJarvisVoice = () => {
       try {
         if (engine === 'kokoro') {
           const ok = await speakKokoro(text);
-          if (!ok) {
-            // Try Speechma next
-            const speechmaOk = await speakSpeechma(text);
-            if (!speechmaOk) await speakWeb(text);
-          }
-        } else if (engine === 'speechma') {
-          const ok = await speakSpeechma(text);
           if (!ok) await speakWeb(text);
         } else {
           await speakWeb(text);
@@ -296,7 +217,7 @@ export const useJarvisVoice = () => {
     };
 
     speak();
-  }, [currentDialogue, isReady, engine, speakKokoro, speakSpeechma, speakWeb, setIsSpeaking]);
+  }, [currentDialogue, isReady, engine, speakKokoro, speakWeb, setIsSpeaking]);
 
   const stopSpeaking = useCallback(() => {
     if (sourceNodeRef.current) {
@@ -309,18 +230,15 @@ export const useJarvisVoice = () => {
     isSpeakingRef.current = false;
   }, [setIsSpeaking]);
 
-  // Initialize audio on user gesture (required by browser autoplay policy)
+  // Initialize audio on user gesture
   const initialize = useCallback(async () => {
-    // Init audio context
     const ctx = initAudioContext();
     if (ctx.state === 'suspended') {
       await ctx.resume();
     }
 
-    // Warm up Web Speech voices
     if ('speechSynthesis' in window) {
       window.speechSynthesis.getVoices();
-      // Force load voices if empty
       if (window.speechSynthesis.getVoices().length === 0) {
         window.speechSynthesis.onvoiceschanged = () => {
           window.speechSynthesis.getVoices();

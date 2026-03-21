@@ -1,17 +1,14 @@
 import React, { useCallback } from "react";
 import { motion } from "framer-motion";
 import { useSoundEngine } from "../hooks/useSoundEngine";
-import { useJarvisVoice } from "../hooks/useJarvisVoice";
 
 export const OnboardingModal = ({ onStart }) => {
-  const { initialize: initSound } = useSoundEngine();
-  const { initialize: initVoice } = useJarvisVoice();
+  const { initialize } = useSoundEngine();
 
   const handleClick = useCallback(async () => {
-    // Initialize both audio systems on user gesture
-    await Promise.all([initSound(), initVoice()]);
+    await initialize();
     onStart();
-  }, [initSound, initVoice, onStart]);
+  }, [initialize, onStart]);
 
   return (
     <motion.div
