@@ -3,6 +3,7 @@
 # Change values here only. Never hardcode in other files.
 
 import os
+import torch
 
 class RavenConfig:
 
@@ -62,6 +63,6 @@ class RavenConfig:
     MAX_NEW_TOKENS  = 40           # Hard cap on generated tokens
 
     # ── Device ──────────────────────────────────────────────────────────
-    DEVICE = "cuda"                # Change to "cpu" if no GPU
+    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 cfg = RavenConfig()
