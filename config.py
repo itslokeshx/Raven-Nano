@@ -56,10 +56,10 @@ class RavenConfig:
     EOS_TOKEN    = "<|eos|>"
 
     # ── Inference / Sampling ────────────────────────────────────────────
-    DEFAULT_TEMP    = 0.75         # Default sampling temperature
-    DEFAULT_TOP_K   = 35           # Top-K sampling
-    DEFAULT_TOP_P   = 0.88         # Nucleus sampling
-    REP_PENALTY     = 1.3          # Repetition penalty (>1.0 = penalize repeats)
+    DEFAULT_TEMP    = 0.65         # Default sampling temperature (tuned)
+    DEFAULT_TOP_K   = 25           # Top-K sampling (tuned)
+    DEFAULT_TOP_P   = 0.85         # Nucleus sampling (tuned)
+    REP_PENALTY     = 1.10         # Repetition penalty (tuned, was 1.3 — too aggressive)
     MAX_NEW_TOKENS  = 40           # Hard cap on generated tokens
 
     # ── Device ──────────────────────────────────────────────────────────
