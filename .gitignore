@@ -1,0 +1,11 @@
+# Raven Nano
+__pycache__/
+*.pyc
+*.pyo
+data/*.bin
+checkpoints/*.pt
+checkpoints/*.json
+*.egg-info/
+dist/
+build/
+.ipynb_checkpoints/
