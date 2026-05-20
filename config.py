@@ -42,7 +42,7 @@ class RavenConfig:
 
     # ── Checkpoints / Drive ─────────────────────────────────────────────
     CHECKPOINT_DIR       = "checkpoints"
-    BEST_CHECKPOINT      = "checkpoints/raven_nano_best.pt"
+    BEST_CHECKPOINT      = "checkpoints/raven_nano_posttrain_best.pt"
     LATEST_CHECKPOINT    = "checkpoints/raven_nano_latest.pt"
 
     # Google Drive paths (set these in Colab after mounting)
