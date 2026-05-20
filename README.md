@@ -1,311 +1,288 @@
 <p align="center">
   <h1 align="center">🐦‍⬛ Raven Nano</h1>
   <p align="center">
-    <strong>A 10M parameter transformer language model, built from scratch.</strong>
+    <em>A 6M-parameter language model with more personality than parameters.</em>
   </p>
   <p align="center">
-    Trained to deliver one-line sarcastic, funny, and teasing responses to casual human inputs.
-  </p>
-  <p align="center">
-    <img src="https://img.shields.io/badge/Parameters-~10M-blueviolet?style=flat-square" alt="Parameters">
-    <img src="https://img.shields.io/badge/Framework-PyTorch-EE4C2C?style=flat-square&logo=pytorch&logoColor=white" alt="PyTorch">
-    <img src="https://img.shields.io/badge/Tokenizer-ByteBPE-orange?style=flat-square" alt="Tokenizer">
-    <img src="https://img.shields.io/badge/Platform-Colab%20T4-F9AB00?style=flat-square&logo=googlecolab&logoColor=white" alt="Colab">
-    <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License">
+    <img src="https://img.shields.io/badge/Parameters-6.19M-blueviolet?style=flat-square" />
+    <img src="https://img.shields.io/badge/Vocab-4096_BPE-blue?style=flat-square" />
+    <img src="https://img.shields.io/badge/Context-128_tokens-green?style=flat-square" />
+    <img src="https://img.shields.io/badge/PyTorch-2.1%2B-ee4c2c?style=flat-square&logo=pytorch" />
   </p>
 </p>
 
 ---
 
-## What is Raven Nano?
+Raven Nano is a hyper-lightweight, GPT-style decoder-only transformer built from scratch and fine-tuned to be a **witty, sarcastic, and personality-driven chatbot**. It doesn't try to be an encyclopedia — it tries to be funny.
 
-Raven Nano is a **GPT-style decoder-only transformer** designed to be small enough to train on a free Google Colab T4 GPU, yet expressive enough to develop a consistent personality. Feed it casual conversation and it learns to respond with attitude.
-
-```
-You:   i'll start studying tomorrow
-Raven: tomorrow's been real patient with you huh
-
-You:   good morning
-Raven: it's morning. nothing good about it yet.
-
-You:   i'm a failure
-Raven: you're not a failure. failures actually attempt things.
-```
-
-> **This is not a general-purpose LLM.** Raven Nano is a character model — trained on a curated corpus to produce short, punchy, in-character responses.
+It runs on CPU. It runs on a free-tier Colab GPU in under 2 minutes. It fits in ~25MB on disk. And it will roast you for asking it math questions.
 
 ---
 
-## Architecture
+## ✨ Sample Conversations (Pure Model Output — Zero Filters)
 
-| Component | Detail |
-|---|---|
-| **Type** | Decoder-only Transformer (GPT-style) |
-| **Parameters** | ~10M |
-| **Layers** | 6 Transformer blocks |
-| **Attention** | 8 heads, 40 dims/head |
-| **Embedding** | 320 dimensions |
-| **FFN** | 960 hidden (3× embed) |
-| **Context** | 128 tokens |
-| **Vocab** | 4096 (Byte-level BPE) |
-| **Norm** | Pre-LayerNorm (more stable at small scale) |
-| **Activation** | GELU |
-| **Weight Tying** | Yes — embedding ↔ LM head (saves ~1.3M params) |
-
-### Parameter Breakdown
+These are **real, unfiltered outputs** from the 6.19M parameter model. No hardcoded fallbacks. No dictionary checking. No post-processing. Just raw transformer generation.
 
 ```
-Token embedding  (4096 × 320)           ≈  1.31M
-Position embedding (128 × 320)          ≈  0.04M
-6× Transformer Block:
-  ├─ QKV projection  (320 × 960) × 6   ≈  1.84M
-  ├─ Output proj     (320 × 320) × 6   ≈  0.61M
-  ├─ FFN up          (320 × 960) × 6   ≈  1.84M
-  └─ FFN down        (960 × 320) × 6   ≈  1.84M
-Final LayerNorm                         ≈  tiny
-LM Head (weight tied)                   =  0
-────────────────────────────────────────────────
-Total                                   ≈  9.8–10.1M
+You: my code won't run
+Raven: The bug is a feature you haven't accepted yet.
+
+You: i failed the test
+Raven: The exam is not the one who should feel bad here.
+
+You: explain quantum physics
+Raven: My expertise is sarcasm, not science.
+
+You: i'm tired
+Raven: Your muscles exist in theory. The gym would like proof.
+
+You: nobody understands me
+Raven: I'm not a therapist, but even I can tell you need one.
+
+You: asdfghjkl
+Raven: Even I can't make sense of what you just said.
+
+You: what is 47 times 83
+Raven: I'm not Google, but I'm flattered you confused us.
+
+You: i broke my charger
+Raven: The world is not ending, just your patience.
+
+You: i'm having a midlife crisis at 20
+Raven: That's a lot of feelings for someone talking to a chatbot.
+
+You: ...
+Raven: You broke me. Congratulations, that's actually impressive.
 ```
 
 ---
 
-## Project Structure
+## 🏗️ Architecture
+
+Raven Nano is a standard GPT-style decoder-only transformer with Pre-LayerNorm and weight-tying between the input embedding and the language model head.
+
+| Component | Value |
+| :--- | :--- |
+| **Total Parameters** | 6.19 Million |
+| **Transformer Layers** | 6 |
+| **Attention Heads** | 8 |
+| **Head Dimension** | 40 |
+| **Embedding Dimension** | 320 |
+| **FFN Hidden Dimension** | 960 (3× embed) |
+| **Vocabulary Size** | 4,096 (custom BPE) |
+| **Context Window** | 128 tokens |
+| **Normalization** | Pre-LayerNorm |
+| **Weight Tying** | Enabled (embed ↔ LM head) |
+| **Dropout** | 0.1 |
+| **Attention** | PyTorch `scaled_dot_product_attention` (FlashAttention when available) |
+
+---
+
+## 🧪 Training Pipeline
+
+The model was developed in two distinct phases.
+
+### Phase 1 — Pre-Training (From Scratch)
+
+The model was trained from random initialization on a 250K-pair sarcastic conversational corpus.
+
+| Setting | Value |
+| :--- | :--- |
+| **Optimizer** | AdamW |
+| **Betas** | (0.9, 0.95) |
+| **Weight Decay** | 0.1 |
+| **Peak Learning Rate** | 3e-4 |
+| **Min Learning Rate** | 3e-5 |
+| **LR Schedule** | Cosine decay with linear warmup |
+| **Warmup Steps** | 300 |
+| **Total Steps** | 10,000 |
+| **Micro Batch Size** | 32 |
+| **Gradient Accumulation** | 2 (effective batch = 64) |
+| **Gradient Clipping** | 1.0 |
+| **Precision** | FP16 mixed precision |
+| **Dataset** | ~250K sarcastic conversational pairs |
+| **Best Validation Loss** | 0.9571 |
+
+**Result:** The model learned strong sarcastic tone and handled greetings, emotional topics, and study-related prompts well. However, it produced **gibberish hallucinations** on out-of-distribution topics like coding, fitness, and daily-life objects (e.g., *"The shrass is a centle"*).
+
+### Phase 2 — Post-Training (Fine-Tuning)
+
+To fix the hallucination problem without destroying the learned personality, we generated a targeted 20K-pair dataset covering the model's blind spots and fine-tuned with a much lower learning rate.
+
+| Setting | Value |
+| :--- | :--- |
+| **Base Checkpoint** | `raven_nano_best.pt` (step 10,000) |
+| **Peak Learning Rate** | 5e-5 |
+| **Min Learning Rate** | 5e-6 |
+| **Warmup Steps** | 100 |
+| **Total Steps** | 2,000 |
+| **Dataset** | 20K targeted conversational pairs |
+| **Dataset Categories** | Greetings, Study, Coding, Fitness, Emotional, Daily Life, Knowledge Deflection, Commands, Edge Cases |
+| **Best Validation Loss** | 1.8212 (step 500) |
+
+**Result:** Complete elimination of gibberish. The model now generates coherent, in-character English for every input tested — including pure nonsense inputs like `asdfghjkl`.
+
+### Before vs. After — Side by Side
+
+| Prompt | Pre-Train Only ❌ | Post-Trained ✅ |
+| :--- | :--- | :--- |
+| `my code won't run` | *"The shrass is a centle."* | *"The bug is a feature you haven't accepted yet."* |
+| `i broke my charger` | *"The diring is a lot of pressure."* | *"The world is not ending, just your patience."* |
+| `asdfghjkl` | *"The saming to the fridge and myth."* | *"Even I can't make sense of what you just said."* |
+| `explain quantum physics` | *"The centle of a converage."* | *"My expertise is sarcasm, not science."* |
+| `i'm running late` | *"The sting is now a centle."* | *"Your usual entrance is fashionably late."* |
+
+---
+
+## 🎛️ Inference Parameters
+
+The sampling strategy uses temperature scaling, top-k, top-p (nucleus), and a repetition penalty.
+
+| Parameter | Default | Description |
+| :--- | :--- | :--- |
+| **Temperature** | 0.65 | Controls randomness. Lower = more deterministic. |
+| **Top-K** | 25 | Only the top 25 tokens are considered at each step. |
+| **Top-P** | 0.85 | Nucleus sampling threshold. |
+| **Repetition Penalty** | 1.10 | Penalizes already-generated tokens to avoid loops. |
+| **Max New Tokens** | 40 | Hard cap on response length. |
+
+The interactive chat also supports switchable **modes**:
+
+| Mode | Temp | Top-K | Top-P | Rep Penalty | Vibe |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `default` | 0.65 | 25 | 0.85 | 1.10 | Balanced, witty |
+| `sharp` | 0.55 | 20 | 0.80 | 1.10 | More focused, precise |
+| `chaos` | 0.85 | 45 | 0.92 | 1.05 | Wild, unpredictable |
+| `cold` | 0.45 | 12 | 0.75 | 1.08 | Dry, minimal |
+
+---
+
+## 📂 Project Structure
 
 ```
-raven_nano/
-│
-├── config.py              ← Single source of truth for ALL hyperparameters
-├── tokenizer_train.py     ← Trains BPE tokenizer on corpus
-├── data_prep.py           ← Tokenizes corpus → binary train/val splits
-├── model.py               ← Full transformer architecture
-├── train.py               ← Training loop (AMP, grad accum, checkpointing)
-├── inference.py           ← Interactive chat interface
-├── colab_runner.ipynb     ← End-to-end Colab notebook
-├── requirements.txt       ← Dependencies
-│
-├── data/
-│   └── corpus.txt         ← Your training data (you provide this)
-│
-└── checkpoints/           ← Created during training
-    ├── raven_nano_best.pt
-    ├── raven_nano_latest.pt
-    └── raven_nano_tokenizer.json
+Raven-Nano/
+├── config.py             # All hyperparameters in one place
+├── model.py              # Transformer architecture (CausalSelfAttention, TransformerBlock, RavenNano)
+├── tokenizer_train.py    # BPE tokenizer training script
+├── data_prep.py          # Tokenize raw corpus → binary train/val splits
+├── train.py              # Pre-training loop (cosine LR, mixed precision, Drive sync)
+├── posttrain.py          # Post-training loop (auto-tokenizes corpus, lower LR)
+├── inference.py          # Interactive chat + sampling (SessionMemory anti-repeat)
+├── colab_runner.ipynb    # Google Colab notebook for cloud training
+├── requirements.txt      # torch, tokenizers, numpy
+└── data/
+    ├── corpus.txt              # Pre-training corpus (250K pairs)
+    └── posttrain_corpus.txt    # Post-training corpus (20K pairs)
 ```
 
 ---
 
-## Quick Start
+## 🚀 Quickstart
 
-### Prerequisites
+### 1. Install Dependencies
 
 ```bash
-pip install torch tokenizers numpy
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 ```
 
-### Execution Order
+### 2. Chat with Raven Nano
 
-> Run in this exact order. Never skip a step.
-
-```
-1. tokenizer_train.py     ← Train BPE tokenizer on corpus
-2. data_prep.py           ← Tokenize corpus, save binary files
-3. train.py               ← Train the model
-4. inference.py           ← Chat with the trained model
-```
-
-### Local Training
+Place `raven_nano_posttrain_best.pt` and `raven_nano_tokenizer.json` in the `checkpoints/` directory, then:
 
 ```bash
-# 1. Place your corpus.txt in data/
-cp your_corpus.txt data/corpus.txt
-
-# 2. Train tokenizer
-python tokenizer_train.py
-
-# 3. Prepare binary data
-python data_prep.py
-
-# 4. Train
-python train.py
-
-# 5. Chat
 python inference.py
 ```
 
-### Google Colab (Recommended)
-
-Open `colab_runner.ipynb` in Google Colab and run cells top to bottom:
-
-1. **Mount Drive** — for checkpoint persistence
-2. **Install deps** — `tokenizers` package
-3. **Upload files** — all `.py` files + `corpus.txt` in one upload
-4. **Train tokenizer** → **Prepare data** → **Train** → **Test**
-
-If Colab disconnects mid-training:
-```python
-!python train.py --resume
 ```
-It picks up exactly where it left off from the latest checkpoint.
+══════════════════════════════════════════════════
+RAVEN NANO — Terminal Chat (Pure Post-Trained)
+Type 'quit' to exit. Type 'mode' to change mood.
+══════════════════════════════════════════════════
 
----
-
-## Training Details
-
-### Hyperparameters
-
-| Parameter | Value |
-|---|---|
-| Total steps | 10,000 |
-| Effective batch size | 64 (32 micro × 2 accum) |
-| Learning rate | 3e-4 → 3e-5 (cosine decay) |
-| Warmup | 300 steps |
-| Optimizer | AdamW (β₁=0.9, β₂=0.95) |
-| Weight decay | 0.1 |
-| Gradient clip | 1.0 |
-| Precision | Mixed (FP16 via AMP) |
-
-### Expected Training Behavior
-
-| Step | Train Loss | Val Loss | Status |
-|---|---|---|---|
-| 0 | ~8.5 | ~8.5 | Random weights |
-| 500 | ~2.8 | ~3.1 | Learning token patterns |
-| 1,000 | ~1.9 | ~2.3 | Structure forming |
-| 3,000 | ~1.3 | ~1.6 | Character emerging |
-| 6,000 | ~0.95 | ~1.2 | Consistent one-liners |
-| 10,000 | ~0.80 | ~0.95 | **Locked in** ✓ |
-
-> **Val loss below 1.0** = model has learned Raven's character.
-
-### Checkpointing
-
-- **Best checkpoint** saved whenever validation loss improves
-- **Latest checkpoint** saved every 500 steps (for resuming)
-- **Drive sync** every 1000 steps (when running on Colab)
-
----
-
-## Inference
-
-### Terminal Chat
-
-```bash
-python inference.py
-```
-
-```
 You: hey
-Raven: oh you're alive. congrats.
+Raven: You again. The universe really has no variety.
+
+You: i have an exam tomorrow
+Raven: And you're here. Great strategy so far.
 
 You: mode
 Current: default
-Options: ['default', 'chaos', 'cold']
+Options: ['default', 'sharp', 'chaos', 'cold']
 Select mode: chaos
-
-You: what's the meaning of life
-Raven: idk but it's definitely not this conversation
+Mode set to: chaos
 ```
 
-### Sampling Modes
+### 3. Train from Scratch (Optional)
 
-| Mode | Temperature | Top-K | Top-P | Vibe |
-|---|---|---|---|---|
-| `default` | 0.75 | 35 | 0.88 | Balanced sass |
-| `chaos` | 1.05 | 60 | 0.95 | Unhinged energy |
-| `cold` | 0.48 | 15 | 0.75 | Calculated roasts |
+```bash
+# Step 1: Train the BPE tokenizer
+python tokenizer_train.py
 
-### Sampling Strategy
+# Step 2: Prepare binary data
+python data_prep.py
 
-1. **Repetition penalty** (1.3×) — prevents token loops
-2. **Temperature** — controls randomness
-3. **Top-K** — keeps only the K most likely tokens
-4. **Top-P (nucleus)** — keeps tokens until cumulative prob reaches P
-5. **EOS stop** — halts generation at `<|eos|>` token
-6. **Hard cap** — max 40 new tokens
+# Step 3: Pre-train the model
+python train.py
 
----
-
-## Corpus Format
-
-Your `corpus.txt` should contain conversation pairs separated by blank lines:
-
-```
-<|user|> hey what's up
-<|raven|> the ceiling, probably. you should look into it.
-
-<|user|> i'm so tired
-<|raven|> tired of what? you haven't done anything.
-
-<|user|> can you help me with homework
-<|raven|> i could. but watching you struggle is more fun.
+# Step 4: Post-train on the targeted dataset
+python posttrain.py
 ```
 
-**Guidelines:**
-- One pair per block (user message + raven response)
-- Blank line between pairs
-- Keep responses short (one-liners work best)
-- More data = better character consistency
+### 4. Train on Google Colab
+
+Open `colab_runner.ipynb` in Google Colab with a T4 GPU. The notebook handles Drive mounting, training, and checkpoint syncing automatically.
 
 ---
 
-## Corpus Design Tips
+## 🔧 Special Tokens
 
-| ✅ Do | ❌ Don't |
-|---|---|
-| Keep responses under 20 words | Write multi-paragraph responses |
-| Use consistent tone/personality | Mix different character voices |
-| Include variety in user inputs | Repeat the same prompts |
-| Add 2000+ pairs minimum | Train on < 500 pairs |
-| Use natural, casual language | Use formal/academic language |
+| Token | Purpose |
+| :--- | :--- |
+| `<\|user\|>` | Marks the start of a user message |
+| `<\|raven\|>` | Marks the start of Raven's response |
+| `<\|eos\|>` | End of sequence — signals the model to stop generating |
+| `<\|pad\|>` | Padding token for batch alignment |
 
----
-
-## Technical Design Decisions
-
-| Decision | Why |
-|---|---|
-| **Byte-level BPE** | Handles any Unicode/emoji input, no UNK tokens |
-| **4096 vocab** | Compact vocab forces efficient token usage at small scale |
-| **Pre-LayerNorm** | More stable training than Post-LayerNorm for small models |
-| **No bias in attention** | Slightly better generalization at this scale |
-| **Weight tying** | Saves ~1.3M params — critical at 10M total |
-| **Binary data format** | Memmap loads in milliseconds vs. seconds for text parsing |
-| **Cosine LR decay** | Smooth convergence, prevents large updates near the end |
-| **Gradient accumulation** | Simulates 64 batch size while fitting in T4 16GB VRAM |
-
----
-
-## Troubleshooting
-
-| Issue | Cause | Fix |
-|---|---|---|
-| Val loss plateaus before step 5000 | Low quality/quantity corpus | Add more diverse training pairs |
-| Val loss spikes | Gradient explosion | Resume from best checkpoint: `train.py --resume` |
-| CUDA out of memory | Batch too large | Reduce `MICRO_BATCH` in `config.py` |
-| Repetitive outputs | Weak repetition penalty | Increase `REP_PENALTY` in `config.py` |
-| Nonsense outputs | Undertrained | Train longer or check corpus formatting |
-
----
-
-## Requirements
+**Prompt format used during training and inference:**
 
 ```
-torch>=2.1.0
-tokenizers>=0.15.0
-numpy>=1.24.0
+<|user|> i failed the test
+<|raven|> The exam is not the one who should feel bad here.
 ```
-
-**Python 3.10+** required.
 
 ---
 
-## License
+## 📊 Full Evaluation (150 Prompts, 9 Categories)
 
-MIT
+The model was stress-tested across **150 prompts** spanning 9 categories with zero Python-side filters. Key results:
+
+| Category | Prompts | Coherent | Gibberish | Score |
+| :--- | :--- | :--- | :--- | :--- |
+| Greetings & Small Talk | 23 | 23 | 0 | **100%** |
+| Study & Academics | 20 | 20 | 0 | **100%** |
+| Coding & Tech | 10 | 10 | 0 | **100%** |
+| Health & Fitness | 20 | 20 | 0 | **100%** |
+| Emotional & Deep | 20 | 20 | 0 | **100%** |
+| Daily Life & Random | 20 | 20 | 0 | **100%** |
+| Requests & Commands | 15 | 15 | 0 | **100%** |
+| Knowledge & Impossible | 13 | 13 | 0 | **100%** |
+| Gibberish & Edge Cases | 9 | 9 | 0 | **100%** |
+| **Total** | **150** | **150** | **0** | **100%** |
+
+---
+
+## 🤔 Design Philosophy
+
+1. **Personality over knowledge.** Raven Nano doesn't pretend to know things. When asked *"what's the capital of Peru?"*, it says *"I skipped that class too. We have so much in common."* — and that's by design.
+
+2. **Fix the model, not the code.** The initial version required 400+ lines of Python dictionary filters to prevent gibberish. Post-training eliminated the root cause, allowing us to delete all of that code. The current `inference.py` is pure sampling — no regex, no word lists, no hardcoded fallbacks.
+
+3. **Small models can have style.** With just 6.19M parameters and a 128-token context, Raven Nano proves that a well-curated dataset matters more than model size for persona-driven applications.
 
 ---
 
 <p align="center">
-  <sub>Built from scratch with pure PyTorch. No HuggingFace Trainer. No shortcuts.</sub>
+  <em>Built with PyTorch. Trained with sarcasm. Deployed with minimal regret.</em>
 </p>
