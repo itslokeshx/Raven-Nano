@@ -4,6 +4,11 @@
     <em>A 6M-parameter language model with more personality than parameters.</em>
   </p>
   <p align="center">
+    <a href="https://itslokeshx-raven-nano.hf.space/">
+      <img src="https://img.shields.io/badge/🤗%20Live%20Demo-Hugging%20Face%20Spaces-FFD21F?style=flat-square" />
+    </a>
+  </p>
+  <p align="center">
     <img src="https://img.shields.io/badge/Parameters-6.19M-blueviolet?style=flat-square" />
     <img src="https://img.shields.io/badge/Vocab-4096_BPE-blue?style=flat-square" />
     <img src="https://img.shields.io/badge/Context-128_tokens-green?style=flat-square" />
@@ -16,6 +21,8 @@
 Raven Nano is a hyper-lightweight, GPT-style decoder-only transformer built from scratch and fine-tuned to be a **witty, sarcastic, and personality-driven chatbot**. It doesn't try to be an encyclopedia — it tries to be funny.
 
 It runs on CPU. It runs on a free-tier Colab GPU in under 2 minutes. It fits in ~25MB on disk. And it will roast you for asking it math questions.
+
+> **🚀 Try it live → [itslokeshx-raven-nano.hf.space](https://itslokeshx-raven-nano.hf.space/)**
 
 ---
 
